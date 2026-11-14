@@ -142,6 +142,29 @@ def evaluate_design(design: Design, scenario: Scenario, catalog: Catalog) -> Eva
         "The design costs more than the mission budget.",
     ))
 
+    # A launcher's explicitly declared orbit set is a hard compatibility rule.
+    # An empty set preserves backwards compatibility with older/mock catalogs.
+    if not launcher or not orbit:
+        compatibility = ConstraintResult(
+            id="launch_orbit_compatibility", severity="hard", status="not_evaluated",
+            related_step="launch_vehicle",
+            message="Not evaluated yet: select both a launch vehicle and an orbit.",
+        )
+    else:
+        supported = launcher[0].supported_orbit_ids
+        compatible = not supported or orbit[0].id in supported
+        compatibility = ConstraintResult(
+            id="launch_orbit_compatibility", severity="hard",
+            status="passed" if compatible else "failed",
+            related_step="launch_vehicle",
+            message=(
+                "The launch vehicle supports the selected orbit."
+                if compatible else
+                "The selected launch vehicle does not support the selected orbit."
+            ),
+        )
+    constraints.append(compatibility)
+
     served = {o for c in instruments for o in c.serves_objective_ids}
     uncovered = [o.name for o in scenario.objectives if o.id not in served]
     if not instruments:

@@ -15,7 +15,11 @@
         "kind": "gameplay",
         "note": "Mock placeholder value"
       }
-    }
+    },
+    "supported_orbit_ids": [
+      "sun_synchronous",
+      "equatorial_leo"
+    ]
   },
   {
     "id": "medium_launcher",
@@ -33,6 +37,10 @@
         "kind": "gameplay",
         "note": "Mock placeholder value"
       }
-    }
+    },
+    "supported_orbit_ids": [
+      "sun_synchronous",
+      "equatorial_leo"
+    ]
   }
 ]

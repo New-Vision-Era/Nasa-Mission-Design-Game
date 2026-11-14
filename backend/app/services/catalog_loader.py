@@ -74,6 +74,18 @@ def load_catalog(data_dir: Path) -> Catalog:
                         f"'{prov.source_id}' is not in sources.json"
                     )
 
+    # Validate launch vehicle -> orbit references after all component files load.
+    for component in components.values():
+        if component.category != "launch_vehicle":
+            continue
+        for orbit_id in component.supported_orbit_ids:
+            orbit = components.get(orbit_id)
+            if orbit is None or orbit.category != "orbit":
+                problems.append(
+                    f"components/launch_vehicles [{component.id}]: "
+                    f"supported orbit '{orbit_id}' does not reference an orbit component"
+                )
+
     scenarios: dict[str, Scenario] = {}
     for path in sorted((data_dir / "scenarios").glob("*.json")):
         raw = _read(path, problems)
