@@ -58,16 +58,16 @@ class RunService:
             if user is None:
                 raise ApiError(401, "not_authenticated", "Log in to launch a saved mission.")
             owned = self.db.query_one(
-                "SELECT id FROM missions WHERE id = ? AND user_id = ?", (body.mission_id, user.id)
-            )
-            owned = self.db.query_one(
                 "SELECT id, scenario_id, design_json FROM missions WHERE id = ? AND user_id = ?",
                 (body.mission_id, user.id),
             )
             if owned is None:
                 raise not_found("Mission")
             saved_design = owned["design_json"]
-            if owned["scenario_id"] != body.design.scenario_id or Design.model_validate_json(saved_design) != body.design:
+            if (
+                owned["scenario_id"] != body.design.scenario_id
+                or Design.model_validate_json(saved_design) != body.design
+            ):
                 raise ApiError(
                     409, "mission_design_mismatch",
                     "The submitted design does not match the saved mission. Load the saved design before launching it.",
