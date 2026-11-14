@@ -1,0 +1,15 @@
+{
+  "scenario_id": "earth_observation_01",
+  "spacecraft": {
+    "platform_id": "small_platform",
+    "instrument_ids": [
+      "optical_camera"
+    ],
+    "power_system_id": "solar_array_small",
+    "communication_system_id": "x_band_high_gain",
+    "propulsion_system_id": "cold_gas",
+    "adcs_system_id": "reaction_wheels"
+  },
+  "orbit_id": "sun_synchronous",
+  "launch_vehicle_id": "small_launcher"
+}

@@ -1,0 +1,61 @@
+[
+  {
+    "id": "sun_synchronous",
+    "category": "orbit",
+    "name": "Sun-synchronous orbit",
+    "summary": "Passes over each place at the same local time.",
+    "altitude_km": 700,
+    "inclination_deg": 98,
+    "suitable_objective_ids": [
+      "surface_imaging"
+    ],
+    "provenance": {
+      "altitude_km": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "inclination_deg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  },
+  {
+    "id": "equatorial_leo",
+    "category": "orbit",
+    "name": "Equatorial low Earth orbit",
+    "summary": "Stays near the equator.",
+    "altitude_km": 550,
+    "inclination_deg": 0,
+    "suitable_objective_ids": [],
+    "provenance": {
+      "altitude_km": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "inclination_deg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  },
+  {
+    "id": "geostationary",
+    "category": "orbit",
+    "name": "Geostationary orbit",
+    "summary": "Hovers over one longitude, far from the surface.",
+    "altitude_km": 35786,
+    "inclination_deg": 0,
+    "suitable_objective_ids": [],
+    "provenance": {
+      "altitude_km": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "inclination_deg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  }
+]

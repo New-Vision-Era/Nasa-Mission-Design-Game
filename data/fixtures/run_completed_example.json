@@ -1,0 +1,128 @@
+{
+  "status": "completed",
+  "seed": 0,
+  "design": {
+    "scenario_id": "earth_observation_01",
+    "spacecraft": {
+      "platform_id": "small_platform",
+      "instrument_ids": [
+        "optical_camera"
+      ],
+      "power_system_id": "solar_array_small",
+      "communication_system_id": "x_band_high_gain",
+      "propulsion_system_id": "cold_gas",
+      "adcs_system_id": "reaction_wheels"
+    },
+    "orbit_id": "sun_synchronous",
+    "launch_vehicle_id": "small_launcher"
+  },
+  "progress": {
+    "step": 5,
+    "total_steps": 5,
+    "elapsed_days": 365.0
+  },
+  "resources": {
+    "total_mass_kg": 255.0,
+    "power_required_w": 265.0,
+    "power_available_w": 300.0,
+    "data_generated_gb_per_day": 20.0,
+    "downlink_capacity_gb_per_day": 80.0,
+    "cost_usd": 43500000.0,
+    "budget_usd": 80000000.0,
+    "launch_capacity_kg": 300.0,
+    "mass_margin_fraction": 0.15,
+    "power_margin_fraction": 0.1167
+  },
+  "telemetry": {
+    "science_data_returned_gb": 6424.0,
+    "health_fraction": 1.0
+  },
+  "pending_event": null,
+  "occurred_event_ids": [
+    "solar_storm",
+    "power_fault"
+  ],
+  "log": [
+    {
+      "step": 0,
+      "message": "Launch and deployment complete."
+    },
+    {
+      "step": 1,
+      "message": "Event: Solar storm warning."
+    },
+    {
+      "step": 1,
+      "message": "Decision: Enter safe mode (science for this period scaled by 0.8)."
+    },
+    {
+      "step": 1,
+      "message": "Returned 1168 GB of science data."
+    },
+    {
+      "step": 2,
+      "message": "Event: Power bus fault."
+    },
+    {
+      "step": 2,
+      "message": "Decision: Switch off the instruments (science for this period scaled by 0.6)."
+    },
+    {
+      "step": 2,
+      "message": "Returned 876 GB of science data."
+    },
+    {
+      "step": 3,
+      "message": "Returned 1460 GB of science data."
+    },
+    {
+      "step": 4,
+      "message": "Returned 1460 GB of science data."
+    },
+    {
+      "step": 5,
+      "message": "Returned 1460 GB of science data."
+    },
+    {
+      "step": 5,
+      "message": "Mission complete."
+    }
+  ],
+  "run_id": "7c14dd206fbc4f8b871d94e3a5793c4d",
+  "mission_id": null,
+  "scenario_id": "earth_observation_01",
+  "catalog_version": "0.1.0-mock",
+  "created_at": "2026-11-14T18:44:52+00:00",
+  "completed_at": "2026-11-14T18:44:52+00:00",
+  "debrief": {
+    "outcome": "success",
+    "score": {
+      "science": 88.0,
+      "reliability": 100.0,
+      "efficiency": 100.0,
+      "objectives": 100.0,
+      "total": 95.8
+    },
+    "objectives": [
+      {
+        "id": "surface_imaging",
+        "achieved_fraction": 1.0,
+        "message": "Surface imaging: returned 6424 GB of the 6000 GB target."
+      }
+    ],
+    "findings": [
+      {
+        "kind": "strength",
+        "related_step": null,
+        "message": "The mission met its science data target.",
+        "suggestion": null
+      },
+      {
+        "kind": "strength",
+        "related_step": null,
+        "message": "Every engineering margin was healthy at launch.",
+        "suggestion": null
+      }
+    ]
+  }
+}

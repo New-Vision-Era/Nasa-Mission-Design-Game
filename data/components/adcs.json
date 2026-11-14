@@ -1,0 +1,48 @@
+[
+  {
+    "id": "magnetorquers",
+    "category": "adcs",
+    "name": "Magnetorquers",
+    "summary": "Coarse pointing, very light.",
+    "mass_kg": 3,
+    "power_w": 6,
+    "cost_usd": 1000000,
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  },
+  {
+    "id": "reaction_wheels",
+    "category": "adcs",
+    "name": "Reaction wheels",
+    "summary": "Precise pointing, more power.",
+    "mass_kg": 12,
+    "power_w": 35,
+    "cost_usd": 4000000,
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  }
+]

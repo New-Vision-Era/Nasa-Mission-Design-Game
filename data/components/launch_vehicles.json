@@ -1,0 +1,38 @@
+[
+  {
+    "id": "small_launcher",
+    "category": "launch_vehicle",
+    "name": "Small launcher",
+    "summary": "Cheap ride for light spacecraft.",
+    "payload_capacity_kg": 300,
+    "cost_usd": 8000000,
+    "provenance": {
+      "payload_capacity_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  },
+  {
+    "id": "medium_launcher",
+    "category": "launch_vehicle",
+    "name": "Medium launcher",
+    "summary": "Carries far more, costs far more.",
+    "payload_capacity_kg": 1500,
+    "cost_usd": 30000000,
+    "provenance": {
+      "payload_capacity_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  }
+]

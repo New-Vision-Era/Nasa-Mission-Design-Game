@@ -1,0 +1,93 @@
+[
+  {
+    "id": "optical_camera",
+    "category": "instrument",
+    "name": "Optical camera",
+    "summary": "Visible-light imager for surface mapping.",
+    "mass_kg": 40,
+    "power_w": 90,
+    "cost_usd": 9000000,
+    "data_rate_gb_per_day": 20,
+    "serves_objective_ids": [
+      "surface_imaging"
+    ],
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "data_rate_gb_per_day": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  },
+  {
+    "id": "hyperspectral_imager",
+    "category": "instrument",
+    "name": "Hyperspectral imager",
+    "summary": "Images the surface in many colour bands; heavy on power and data.",
+    "mass_kg": 85,
+    "power_w": 220,
+    "cost_usd": 22000000,
+    "data_rate_gb_per_day": 60,
+    "serves_objective_ids": [
+      "surface_imaging"
+    ],
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "data_rate_gb_per_day": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  },
+  {
+    "id": "magnetometer",
+    "category": "instrument",
+    "name": "Magnetometer",
+    "summary": "Measures the magnetic field; does not image the surface.",
+    "mass_kg": 5,
+    "power_w": 8,
+    "cost_usd": 2000000,
+    "data_rate_gb_per_day": 0.5,
+    "serves_objective_ids": [],
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "data_rate_gb_per_day": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  }
+]

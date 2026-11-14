@@ -1,0 +1,45 @@
+[
+  {
+    "id": "solar_storm",
+    "title": "Solar storm warning",
+    "description": "MOCK EVENT. A strong solar storm will reach the spacecraft within hours.",
+    "base_probability": 0.35,
+    "options": [
+      {
+        "option_id": "safe_mode",
+        "label": "Enter safe mode",
+        "effect_summary": "Lose part of this period's science; protect the electronics.",
+        "effects": [{ "op": "scale_step_science", "value": 0.8 }]
+      },
+      {
+        "option_id": "continue",
+        "label": "Keep observing",
+        "effect_summary": "Keep all the science; even odds of lasting damage.",
+        "effects": [{ "op": "health_delta", "value": -0.25, "chance": 0.5 }]
+      }
+    ]
+  },
+  {
+    "id": "power_fault",
+    "title": "Power bus fault",
+    "description": "MOCK EVENT. A fault on the power bus is draining the battery. A thin power margin makes this more likely.",
+    "base_probability": 0.15,
+    "risk_resource": "power_margin_fraction",
+    "risk_threshold": 0.2,
+    "risk_multiplier": 2.0,
+    "options": [
+      {
+        "option_id": "shed_load",
+        "label": "Switch off the instruments",
+        "effect_summary": "Lose much of this period's science; no risk to the spacecraft.",
+        "effects": [{ "op": "scale_step_science", "value": 0.6 }]
+      },
+      {
+        "option_id": "reset_bus",
+        "label": "Reset the power bus",
+        "effect_summary": "Keep the science; some chance of permanent damage.",
+        "effects": [{ "op": "health_delta", "value": -0.1, "chance": 0.3 }]
+      }
+    ]
+  }
+]
