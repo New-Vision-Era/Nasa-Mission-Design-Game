@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-.venv/
+.myenv/
 venv/
 *.db
 *.db-journal
