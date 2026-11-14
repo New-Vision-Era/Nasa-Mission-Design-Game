@@ -96,3 +96,14 @@ def test_decisions_change_the_outcome_and_inputs_are_not_mutated():
 
     again = engine.apply_decision(start, Decision(event_id="storm", option_id="safe"), scenario, cat)
     assert again == safe                                   # deterministic
+
+
+def test_declared_launch_vehicle_orbit_incompatibility_is_hard():
+    cat = tiny_catalog()
+    cat.components["rocket"].supported_orbit_ids = ["leo"]
+    cat.components["leo"].id = "geo"
+    ev = engine.evaluate_design(design(), cat.scenarios["s"], cat)
+    result = next(c for c in ev.constraints if c.id == "launch_orbit_compatibility")
+    assert result.severity == "hard"
+    assert result.status == "failed"
+    assert ev.launchable is False

@@ -62,6 +62,7 @@ class Component(BaseModel):
     data_rate_gb_per_day: Optional[float] = None  # data generated (instruments)
     downlink_gb_per_day: Optional[float] = None  # data sent home (communication)
     payload_capacity_kg: Optional[float] = None  # launch vehicles
+    supported_orbit_ids: list[str] = Field(default_factory=list)  # empty = unrestricted (legacy/mock catalogs)
     altitude_km: Optional[float] = None  # orbits
     inclination_deg: Optional[float] = None  # orbits
     serves_objective_ids: list[str] = Field(default_factory=list)
