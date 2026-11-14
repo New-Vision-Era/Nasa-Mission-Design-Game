@@ -229,3 +229,15 @@ def test_history_lists_only_my_runs_newest_first(container, good_design):
     # Deleting the saved design keeps the run in the history.
     container.missions.delete(ada, mission.mission_id)
     assert len(container.runs.history(ada)) == 2
+
+
+def test_launch_vehicle_orbit_references_are_validated(tmp_path):
+    data = tmp_path / "data"
+    shutil.copytree(REPO_ROOT / "data", data)
+    path = data / "components" / "launch_vehicles.json"
+    items = json.loads(path.read_text())
+    items[0]["supported_orbit_ids"] = ["not_an_orbit"]
+    path.write_text(json.dumps(items))
+    with pytest.raises(CatalogError) as exc:
+        load_catalog(data)
+    assert "supported orbit 'not_an_orbit'" in "\n".join(exc.value.problems)
