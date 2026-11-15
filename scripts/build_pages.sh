@@ -6,8 +6,9 @@
 #   <out>/py/bundle.zip  backend/app + simulation + data, run in the browser by js/engine-worker.js
 #
 #   bash scripts/build_pages.sh           -> _site/          (what the GitHub workflow deploys)
-#   bash scripts/build_pages.sh --local   -> frontend/game/py/bundle.zip only, to test the
-#                                            in-browser engine with any static server
+#   bash scripts/build_pages.sh --local   -> frontend/game/py/bundle.zip only. Run it and commit the
+#                                            zip after changing backend/, simulation/ or data/:
+#                                            branch-mode Pages serves the committed file.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ "${1:-}" == "--local" ]]; then
@@ -35,7 +36,9 @@ files = [root / "backend/__init__.py"]
 for top in ("backend/app", "simulation", "data"):
     files += sorted(p for p in (root / top).rglob("*") if p.is_file() and wanted(p))
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-    for p in files:
-        z.write(p, p.relative_to(root).as_posix())
+    for p in files:   # fixed timestamps: the zip only changes when the code does
+        info = zipfile.ZipInfo(p.relative_to(root).as_posix(), date_time=(2026, 1, 1, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_DEFLATED
+        z.writestr(info, p.read_bytes())
 print(f"{out}: {len(files)} files, {out.stat().st_size // 1024} KB")
 PY

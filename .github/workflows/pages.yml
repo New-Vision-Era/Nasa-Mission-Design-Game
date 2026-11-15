@@ -1,10 +1,13 @@
-# Publishes the game to GitHub Pages on every push to final-version.
+# Publishes the game to GitHub Pages (game at the site root).
 # The site runs the Python backend in the browser (Pyodide), so no server is needed.
-name: Deploy game to GitHub Pages
+#
+# This repository's Pages is set to "Deploy from a branch: final-version", which serves the repo
+# root (index.html there redirects to frontend/game/). This workflow is the alternative: set
+# Settings -> Pages -> Source to "GitHub Actions", then run it from the Actions tab (or add a push
+# trigger). Running both would make the two deployments overwrite each other.
+name: Deploy game to GitHub Pages (Actions source)
 
 on:
-  push:
-    branches: [final-version]
   workflow_dispatch:
 
 permissions:

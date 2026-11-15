@@ -16,6 +16,5 @@ myenv/
 # home-screen videos are large: compress, then add on purpose with git add -f
 frontend/game/media/home/*.mp4
 
-# GitHub Pages build output
+# GitHub Pages build output (frontend/game/py/bundle.zip is committed: branch-mode Pages serves it as is)
 _site/
-frontend/game/py/
