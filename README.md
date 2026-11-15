@@ -49,11 +49,11 @@ Run every command from the repository root.
 | `GET /runs` | yes | My mission history, newest first |
 | `GET /runs/{id}` | owner | One run in full: design flown, log, debrief |
 | `POST /runs/{id}/decisions` | owner | Answer the pending event |
-| `GET /simulation/catalog` | no | Real component catalog (`data/equipment_v4.json`) |
+| `GET /simulation/catalog` | no | Real component catalog (`data/equipment_v5.json`) |
 | `GET /simulation/scenarios` | no | Real-data scenarios and their gameplay parameters |
 | `POST /simulation/run` | no | Real-data engine: constraints, score, mission, debrief |
 | `POST /simulation/recommend` | no | Alternative designs (Pareto filter) |
-| `POST /simulation/runs` | optional | Launch with the real-data engine and store the result |
+| `POST /simulation/runs` | optional | Launch with the real-data engine and store the result (scenario values only, no overrides) |
 | `GET /simulation/runs` | yes | My stored real-data runs, newest first |
 | `GET /simulation/runs/{id}` | owner | One stored real-data run in full |
 | `GET /simulation/testbench` | no | Developer test page for the real-data engine |

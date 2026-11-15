@@ -260,13 +260,18 @@ Scientific credibility is a major differentiator.
     mock placeholder (`kind: gameplay`, `data_status: mock`). None of it
     is real spacecraft data. Do not present it as real. Saved missions,
     runs and history use this one.
--   `data/equipment_v4.json` with `simulation/engine_v4/` uses real,
+-   `data/equipment_v5.json` with `simulation/engine_v4/` uses real,
     sourced research data (3 platforms, 21 instruments, 17 power, 8
     communication, 9 propulsion, 7 ADCS, 5 orbits, 7 launch vehicles).
     It is a simplified game model, not a high-fidelity simulation. Its
     scenario file `data/scenarios_v4/earth_observation_v4.json` holds
     only requirements and gameplay assumptions.
--   `equipment_v4.json` is not in the `data/components/*.json`
+-   Platform bus mass (`bus_mass_kg`, added in dataset v5) is NOT a
+    GITAI value: GSAT-20 20 kg and GSAT-50 50 kg are estimates, GSAT-200
+    300 kg is derived from brochure delta-v figures with an inference.
+    Each has a range (`bus_mass_range_kg`) and is dry (bus propellant not
+    published). Results that use it carry its value kind and range.
+-   `equipment_v5.json` is not in the `data/components/*.json`
     per-field provenance format. The v4 engine reads it through one
     loader, `simulation/engine_v4/data_loader.py`. `null` means unknown,
     never zero.
@@ -471,13 +476,13 @@ space-mission-game/
 | `sessions` | token hash, user id, created_at, expires_at (7 days by default) |
 | `missions` | A saved design owned by one player: name, scenario id, design JSON, timestamps |
 | `runs` | One launched mission: owner (NULL for a guest), optional mission id, seed, catalog version, status, full run state JSON (includes the design flown), debrief JSON, outcome, total score, timestamps |
-| `simulation_runs` | One launched real-data (engine v4) mission, always complete: owner (NULL for a guest), optional name, scenario id, dataset id, engine version, seed, feasibility, outcome, total score, whether scenario parameters were overridden, configuration JSON, override JSON, full result JSON, created_at |
+| `simulation_runs` | One launched real-data (engine v4) mission, always complete: owner (NULL for a guest), optional name, scenario id, dataset id, engine version, seed, feasibility, outcome, total score, configuration JSON, full result JSON, created_at. (`uses_parameter_overrides` and `scenario_parameters_json` are kept but always 0 and `{}`) |
 
 ### Real-data engine (`simulation/engine_v4/`, implemented)
 
 ``` text
 simulation/engine_v4/
-├── data_loader.py        # loads and indexes equipment_v4.json; null stays None
+├── data_loader.py        # loads and indexes equipment_v5.json; null stays None
 ├── configuration.py      # MissionConfig, ScenarioParams, selection rules
 ├── results.py            # ConstraintResult, statuses, overall feasibility
 ├── evaluation.py         # runs every engineering check
@@ -493,7 +498,7 @@ backend/app/api/simulation_v4.py      # thin router, registered in main.py
 backend/tests/test_simulation_v4_api.py
 frontend/engine-v4-api.js             # window.EngineV4API bridge
 frontend/ENGINE_V4_INTEGRATION.md
-data/equipment_v4.json, data/scenarios_v4/
+data/equipment_v5.json, data/scenarios_v4/
 ```
 
 It is additive, like the Mars rover API: no existing route, model or
@@ -680,9 +685,9 @@ Every error has the same body:
 | `GET /simulation/scenarios` | Scenario briefing and default parameters (gameplay assumptions) |
 | `POST /simulation/run` | `{configuration, scenario_parameters?, seed?}` in; feasibility, constraints, score, mission, debrief out |
 | `POST /simulation/recommend` | Same body; up to five non-dominated alternatives |
-| `POST /simulation/runs` | Launch and store: `{configuration, scenario_parameters?, seed?, name?}`. Login optional, same guest rules as `/runs`. `409 not_launchable` (with `result`) if a hard constraint fails |
+| `POST /simulation/runs` | Launch and store: `{configuration, seed?, name?}`. Always uses the scenario's own parameters (`scenario_parameters` → 422). Login optional, same guest rules as `/runs`. `409 not_launchable` (with `result`) if a hard constraint fails |
 | `GET /simulation/runs` | Login required. The player's stored real-data runs, newest first |
-| `GET /simulation/runs/{run_id}` | Owner (or anyone for a guest run). `{run_id, name, created_at, status, uses_parameter_overrides, scenario_parameters, result}` |
+| `GET /simulation/runs/{run_id}` | Owner (or anyone for a guest run). `{run_id, name, created_at, status, result}` |
 | `GET /simulation/testbench` | Developer test page, not the game UI |
 
 The v4 configuration differs from the mock `Design`: it is flat (no
@@ -1073,7 +1078,11 @@ Add a new entry whenever a major decision is made.
 | 2026-11-15 | The v4 budget check covers platform plus launch only | Almost all component prices are unpublished and are not counted as zero | Scoring, scenarios |
 | 2026-11-15 | v4 runs stored in a new `simulation_runs` table with their own routes, instead of reusing `runs` and `RunState` | The v4 result has a different shape and no pending decisions; a separate table leaves `models.py`, `RunState` and existing history untouched, and needs no database reset | Backend, database, frontend |
 | 2026-11-15 | A v4 design that fails a hard constraint cannot launch (`409 not_launchable`); a `CONDITIONAL` design launches and is flagged | Same rule as the placeholder runs; whether `CONDITIONAL` may launch is still a team decision | Game rules |
-| 2026-11-15 | Stored v4 runs accept scenario parameter overrides and record `uses_parameter_overrides` | A gameplay bus mass is currently only available as an override; the flag keeps such runs distinguishable in history. Remove overrides from `POST /simulation/runs` once the scenario values are agreed, so a client cannot give itself a bigger budget | Backend, game rules |
+| 2026-11-15 | Stored v4 runs accept scenario parameter overrides and record `uses_parameter_overrides` | A gameplay bus mass was only available as an override. **Superseded the same day** (see below) | Backend, game rules |
+| 2026-11-15 | Dataset v5 adopted: engine reads `data/equipment_v5.json` (v4 file removed; only platform bus-mass fields changed) | Research filled `bus_mass_kg` for every platform, so launch mass, rideshare price and delta-v are now evaluated from data | Data, simulation |
+| 2026-11-15 | Launch mass is judged at the stated bus mass; if the top of `bus_mass_range_kg` would exceed capacity the check is a `WARNING` | Bus masses are estimates; the margin must not look certain | Simulation, game rules |
+| 2026-11-15 | Stored runs (`POST /simulation/runs`) no longer accept `scenario_parameters` (422); the stateless `/simulation/run` stays the sandbox | Bus mass now comes from data, so overrides are no longer needed and a player cannot give themselves a bigger budget | Backend, frontend, game rules |
+| 2026-11-15 | Recommendations list only `FEASIBLE` designs; `CONDITIONAL` ones are returned separately | With real bus mass most designs are verifiable; an unverifiable launcher must not win because it cannot be checked | Simulation |
 
 ### Current blockers
 
@@ -1091,13 +1100,13 @@ Add a new entry whenever a major decision is made.
 5.  Pair 2: build against `data/fixtures/`, then the live API; add
     login, register and history screens.
 6.  Decide where the demo runs.
-7.  Whole team: decide the open v4 questions: set a gameplay bus mass
-    or keep every design `CONDITIONAL`; may `CONDITIONAL` designs
+7.  Whole team: decide the open v4 questions: may `CONDITIONAL` designs
     launch; count subsystems against platform payload mass and power;
     check volume for instruments only; which contract the new UI builds
     against (mock `Design` or v4 configuration).
-8.  Whole team: once scenario values are agreed, stop accepting
-    `scenario_parameters` on `POST /simulation/runs`.
+8.  Person 1: if GITAI confirms a bus mass or the GSAT-200 price
+    (3.0M vs 3.5M USD), update `data/equipment_v5.json` only; no code
+    change is needed.
 9.  Pair 3: if the new UI adopts the v4 configuration, add saved designs
     for it and decide whether to merge the two history lists.
 

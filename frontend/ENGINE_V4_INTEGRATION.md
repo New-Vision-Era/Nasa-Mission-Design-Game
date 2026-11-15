@@ -1,6 +1,6 @@
 # Real-data simulation engine: frontend integration
 
-The engine in `simulation/engine_v4/` runs on the researched dataset `data/equipment_v4.json`.
+The engine in `simulation/engine_v4/` runs on the researched dataset `data/equipment_v5.json`.
 It is exposed by the backend next to the existing routes. Nothing existing changed: the mock
 Earth-observation API and the Mars rover API work as before.
 
@@ -11,18 +11,19 @@ Earth-observation API and the Mars rover API work as before.
 | `GET /catalog` | Real components by category, with every original field, sources and caveats |
 | `GET /scenarios` | Scenario briefing and default parameters (gameplay assumptions) |
 | `POST /run` | Configuration in; feasibility, constraints, score, mission and debrief out |
-| `POST /recommend` | Same body; up to five non-dominated alternative designs |
-| `POST /runs` | Launch and store. Body adds optional `name`. `201` with `{run_id, name, created_at, scenario_parameters, result}` |
+| `POST /recommend` | Same body; up to five non-dominated `FEASIBLE` designs, plus `conditional_alternatives` listed apart |
+| `POST /runs` | Launch and store. Body `{configuration, seed?, name?}`. `201` with `{run_id, name, created_at, status, result}` |
 | `GET /runs` | Login required. The player's stored runs, newest first |
 | `GET /runs/{run_id}` | One stored run in full |
 | `GET /testbench` | Developer test page (not the game UI) |
 
-Stored runs follow the same rules as the existing `/runs` routes: send `Authorization: Bearer <token>`
+Stored runs always use the scenario's own parameters: `scenario_parameters` is rejected with
+`422`, so a player cannot give themselves a bigger budget. The stateless `POST /run` remains the
+sandbox where overrides are accepted. Stored runs follow the same rules as the existing `/runs` routes: send `Authorization: Bearer <token>`
 to save to a player's history; a guest run has no owner and is readable by anyone holding its id;
 another player's run answers `404`. A design that fails a hard constraint answers `409 not_launchable`
 and the error carries the full `result`. A `CONDITIONAL` design launches and is flagged.
-Each history row records `uses_parameter_overrides`, so runs that changed scenario parameters
-(for example a larger budget) can be told apart from runs on the scenario's own values.
+
 
 ## Try it
 
@@ -51,7 +52,7 @@ behaviour and shows the full response. Swagger is at http://127.0.0.1:8000/docs.
     propulsion_system_id: null,
     orbit_id: "sso_500",
     launch_vehicle_id: "rocket_lab_electron"
-  }, {bus_mass_kg_assumption: 40}, 42);
+  }, null, 42);
 </script>
 ```
 
@@ -77,7 +78,8 @@ Errors use the backend's shape: `{"error": {"code", "message", "field", "details
   configuration yet. Stored v4 runs keep the configuration that was flown.
 - v4 runs are listed by `GET /simulation/runs`, separately from the placeholder runs in `GET /runs`.
 - The v4 engine runs a whole mission in one call; there are no player decisions during operations.
-- Every design is `CONDITIONAL` unless the scenario sets `bus_mass_kg_assumption`, because the
-  platform bus mass is not published.
+- Bus masses are research estimates, not manufacturer values. A UI should show
+  `resources.bus_mass_kg.basis` and `range` next to the total mass, and treat a `WARNING`
+  on `launch_mass` as "fits at the estimate, uncertain at the top of the range".
 
 More detail: `simulation/engine_v4/README.md`.

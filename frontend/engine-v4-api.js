@@ -1,4 +1,4 @@
-/* Frontend bridge for the additive real-data simulation API (equipment_v4).
+/* Frontend bridge for the additive real-data simulation API (dataset equipment_v5).
    Same pattern as mars-api.js. No UI here: any page can call window.EngineV4API. */
 (() => {
   "use strict";
@@ -38,14 +38,14 @@
       request("/run", {configuration, scenario_parameters: scenarioParameters || null, seed: seed ?? 0}),
     recommend: (configuration, scenarioParameters) =>
       request("/recommend", {configuration, scenario_parameters: scenarioParameters || null}),
-    /* Launch and store. token: bearer token from /auth/login, or omit for a guest run.
-       options: {scenarioParameters, seed, name}. Rejects with code "not_launchable" if a hard constraint fails. */
+    /* Launch and store, always with the scenario's own parameters.
+       token: bearer token from /auth/login, or omit for a guest run. options: {seed, name}.
+       Rejects with code "not_launchable" if a hard constraint fails. */
     launch: (configuration, options = {}, token) =>
-      request("/runs", {configuration, scenario_parameters: options.scenarioParameters || null,
-                        seed: options.seed ?? null, name: options.name || null}, token),
+      request("/runs", {configuration, seed: options.seed ?? null, name: options.name || null}, token),
     /* The logged-in player's stored runs, newest first */
     history: token => request("/runs", undefined, token),
-    /* One stored run in full: {run_id, name, created_at, scenario_parameters, result} */
+    /* One stored run in full: {run_id, name, created_at, status, result} */
     getRun: (runId, token) => request("/runs/" + encodeURIComponent(runId), undefined, token)
   };
 })();
