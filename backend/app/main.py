@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from backend.app.api import auth, catalog, evaluate, mars, missions, runs
+from backend.app.api import auth, catalog, evaluate, mars, missions, runs, simulation_v4
 from backend.app.config import Settings
 from backend.app.container import build_container
 from backend.app.errors import ApiError
@@ -43,8 +43,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         return JSONResponse(status_code=500, content={"error": {
             "code": "internal_error", "message": "Something went wrong on the server.", "field": None}})
 
-    # Earth-observation routes are preserved; the Mars rover API is additive.
-    for module in (catalog, evaluate, auth, missions, runs, mars):
+    # Earth-observation routes are preserved; the Mars rover API and the
+    # real-data simulation engine (equipment_v4) are additive.
+    for module in (catalog, evaluate, auth, missions, runs, mars, simulation_v4):
         app.include_router(module.router, prefix=API_PREFIX)
 
     if settings.frontend_dist and settings.frontend_dist.is_dir():
