@@ -1,4 +1,4 @@
-"""Single loading layer for the canonical equipment_v4.json dataset.
+"""Single loading layer for the canonical equipment dataset (currently equipment_v5.json).
 
 Rules enforced here:
 - null stays None. Nothing is defaulted or converted.
@@ -27,7 +27,7 @@ CATEGORIES = (
 
 _NUMERIC_SUFFIXES = ("_kg", "_w", "_wh", "_kbps", "_usd", "_ns", "_n", "_km", "_deg", "_min")
 
-DEFAULT_PATH = Path(__file__).resolve().parents[2] / "data" / "equipment_v4.json"
+DEFAULT_PATH = Path(__file__).resolve().parents[2] / "data" / "equipment_v5.json"
 
 
 class CatalogError(Exception):
@@ -119,9 +119,9 @@ _cache: dict[tuple[str, float], Catalog] = {}
 def load_catalog(path: Optional[str | os.PathLike] = None) -> Catalog:
     """Load (and cache) the canonical dataset.
 
-    Path order: explicit argument, EQUIPMENT_V4_PATH, <repo>/data/equipment_v4.json.
+    Path order: explicit argument, EQUIPMENT_DATA_PATH, <repo>/data/equipment_v5.json.
     """
-    p = Path(path or os.environ.get("EQUIPMENT_V4_PATH") or DEFAULT_PATH)
+    p = Path(path or os.environ.get("EQUIPMENT_DATA_PATH") or DEFAULT_PATH)
     try:
         key = (str(p), p.stat().st_mtime)
     except OSError as exc:

@@ -5,7 +5,7 @@ Game models (Design, Evaluation, RunState, Debrief...) live in simulation/models
 
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from simulation.models import Component, Debrief, Design, RunState, Scenario, Source
 
@@ -114,8 +114,12 @@ class RunSummary(BaseModel):
 
 
 class SimulationRunCreate(BaseModel):
+    """A stored run always uses the scenario's own parameters: no overrides, so a player cannot
+    give themselves a bigger budget or a lighter bus. Use POST /simulation/run to experiment."""
+
+    model_config = ConfigDict(extra="forbid")
+
     configuration: dict[str, Any]  # validated by the engine (simulation/engine_v4/configuration.py)
-    scenario_parameters: Optional[dict[str, Any]] = None  # gameplay overrides; recorded with the run
     seed: Optional[int] = Field(default=None, ge=0)  # fix it to replay a run exactly
     name: Optional[str] = Field(default=None, min_length=1, max_length=80)
 
@@ -131,5 +135,4 @@ class SimulationRunSummary(BaseModel):
     feasibility: str
     outcome: str
     score_total: Optional[float] = None
-    uses_parameter_overrides: bool = False
     created_at: str

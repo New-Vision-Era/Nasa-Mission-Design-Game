@@ -1,6 +1,6 @@
 {
-  "dataset_id": "equipment_v4",
-  "status": "all categories have a starter dataset; v4 adds interpretation fields only, no research value changed",
+  "dataset_id": "equipment_v5",
+  "status": "v5 adds estimated bus masses for the three GSAT platforms; nothing else changed",
   "retrieved_on": "2026-11-14",
   "reference_altitude_km": 500,
   "constants": {
@@ -46,14 +46,24 @@
         200,
         200
       ],
-      "bus_mass_kg": null,
+      "bus_mass_kg": 20,
       "design_lifetime_years": null,
       "source_urls": [
         "https://gitai.tech/satbus/"
       ],
       "includes_power_hardware": null,
       "includes_comms_adcs_hardware": null,
-      "ownership_note": "Unknown whether the GSAT price and payload_average_power_w include the bus's own solar arrays, batteries, radios and ADCS. null = unresolved, not false."
+      "ownership_note": "Unknown whether the GSAT price and payload_average_power_w include the bus's own solar arrays, batteries, radios and ADCS. null = unresolved, not false.",
+      "bus_mass_range_kg": [
+        15,
+        22
+      ],
+      "bus_mass_basis": "estimate",
+      "bus_mass_method": "GITAI states its bus products range from 20 kg to 300 kg; GSAT-20 is the smallest model, so its bus is placed at the bottom of that range. Gives a 25 kg satellite with a 20% payload fraction, typical of a 16U-class spacecraft (GITAI's own SC1 was a 16U).",
+      "bus_mass_sources": [
+        "https://gitai.tech/spacecraft-components/"
+      ],
+      "bus_mass_note": "bus_mass_kg is the platform without payload, dry (no propellant data published). It is NOT a GITAI-published value: see bus_mass_basis and bus_mass_method. Use bus_mass_range_kg for sensitivity checks."
     },
     {
       "id": "gsat_50",
@@ -69,14 +79,25 @@
         500,
         300
       ],
-      "bus_mass_kg": null,
+      "bus_mass_kg": 50,
       "design_lifetime_years": null,
       "source_urls": [
         "https://gitai.tech/satbus/"
       ],
       "includes_power_hardware": null,
       "includes_comms_adcs_hardware": null,
-      "ownership_note": "Unknown whether the GSAT price and payload_average_power_w include the bus's own solar arrays, batteries, radios and ADCS. null = unresolved, not false."
+      "ownership_note": "Unknown whether the GSAT price and payload_average_power_w include the bus's own solar arrays, batteries, radios and ADCS. null = unresolved, not false.",
+      "bus_mass_range_kg": [
+        40,
+        60
+      ],
+      "bus_mass_basis": "estimate",
+      "bus_mass_method": "Not published. Estimated between the two ends of GITAI's 20-300 kg range, assuming a payload fraction near 17% (10 kg payload, 60 kg satellite), in line with small buses such as SSTL-100 (15 kg payload on a 100 kg satellite).",
+      "bus_mass_sources": [
+        "https://gitai.tech/spacecraft-components/",
+        "https://en.wikipedia.org/wiki/Comparison_of_satellite_buses"
+      ],
+      "bus_mass_note": "bus_mass_kg is the platform without payload, dry (no propellant data published). It is NOT a GITAI-published value: see bus_mass_basis and bus_mass_method. Use bus_mass_range_kg for sensitivity checks."
     },
     {
       "id": "gsat_200",
@@ -92,14 +113,29 @@
         1000,
         700
       ],
-      "bus_mass_kg": null,
+      "bus_mass_kg": 300,
       "design_lifetime_years": null,
       "source_urls": [
-        "https://gitai.tech/satbus/"
+        "https://gitai.tech/satbus/",
+        "https://gitai.tech/wp-content/uploads/2025/10/GITAI_satellite_brochure.pdf"
       ],
       "includes_power_hardware": null,
       "includes_comms_adcs_hardware": null,
-      "ownership_note": "Unknown whether the GSAT price and payload_average_power_w include the bus's own solar arrays, batteries, radios and ADCS. null = unresolved, not false."
+      "ownership_note": "Unknown whether the GSAT price and payload_average_power_w include the bus's own solar arrays, batteries, radios and ADCS. null = unresolved, not false.",
+      "bus_mass_range_kg": [
+        250,
+        300
+      ],
+      "bus_mass_basis": "derived",
+      "bus_mass_method": "The 2025 brochure gives GSAT-200 '200 m/s with 200 kg payload', and GITAI's propulsion module '200 m/s for a 500 kg dry-mass satellite'. If the same module is used, dry satellite = 500 kg, so bus = 500 - 200 = 300 kg. This matches the top of GITAI's stated 20-300 kg bus range and NASA-era small buses (150-300 kg bus for 100-300 kg payload). Derived from published figures, but the 'same propulsion module' step is an inference.",
+      "bus_mass_sources": [
+        "https://gitai.tech/wp-content/uploads/2025/10/GITAI_satellite_brochure.pdf",
+        "https://gitai.tech/spacecraft-components/",
+        "https://www.nationalacademies.org/read/9819/chapter/6",
+        "https://www.moog.com/content/dam/moog/literature/sdg/space/space-vehicles/moog-meteorite-datasheet.pdf"
+      ],
+      "bus_mass_note": "bus_mass_kg is the platform without payload, dry (no propellant data published). It is NOT a GITAI-published value: see bus_mass_basis and bus_mass_method. Use bus_mass_range_kg for sensitivity checks.",
+      "price_note": "The 2025 GITAI brochure lists GSAT-200 at 3.5 million USD with a 12-month lead time; the product web page lists 3,000,000 USD. price_usd keeps the web-page value; confirm with GITAI."
     }
   ],
   "instrument_families": {
@@ -2273,7 +2309,9 @@
     "Most peak or max figures are upper bounds; treat them as worst case.",
     "Only a handful of components have a published price; see the handoff note for the list. The cost model is still a team decision.",
     "v4 adds interpretation fields only: platforms.includes_*_hardware, adcs.pointing_metric / pointing_conditions / power_range_w, communication.can_receive_commands / ground_station_type, launch.orbit_support_basis / capacity_rule, propulsion.mass_rule.",
-    "electrical_power_v1.json from earlier is superseded by power_systems_v1.json and must not be loaded."
+    "electrical_power_v1.json from earlier is superseded by power_systems_v1.json and must not be loaded.",
+    "v5: bus_mass_kg filled for all three platforms. GSAT-20 and GSAT-50 are estimates; GSAT-200 is derived from brochure delta-v figures. None is a GITAI-published bus mass.",
+    "v5: GSAT-200 price conflict recorded in price_note (3.0M USD web page vs 3.5M USD 2025 brochure)."
   ],
   "value_kinds": {
     "published": "from a source in source_urls",

@@ -80,7 +80,7 @@ ul{margin:4px 0 0;padding-left:18px}li{margin:2px 0}
   </section>
   <section><h2>Scenario overrides (gameplay assumptions)</h2>
     <div class="row">
-      <div><label>Bus mass assumption, kg</label><input type="number" id="p_bus" min="0" step="1" placeholder="null = unknown"></div>
+      <div><label>Bus mass override, kg</label><input type="number" id="p_bus" min="0" step="1" placeholder="empty = dataset value"></div>
       <div><label>Budget, USD</label><input type="number" id="p_budget" min="0" step="100000"></div>
       <div><label>Passes per day</label><input type="number" id="p_passes" min="0" step="1"></div>
       <div><label>Instrument duty cycle</label><input type="number" id="p_duty" min="0" max="1" step="0.05"></div>
@@ -114,21 +114,23 @@ const API = window.ENGINE_V4_API_BASE || (/\/simulation\/testbench\/?$/.test(loc
 let CAT = null, SCEN = [], timer = null, busy = false;
 
 const PRESETS = [
-  {name: "Real data only", note: "CONDITIONAL: bus mass unknown", cfg: {}, params: {}},
-  {name: "With bus mass + data rate", note: "FEASIBLE, partial data return", cfg: {}, params: {bus: 40, rate: 20000}},
-  {name: "Too heavy", note: "DragonEye on GSAT-50", cfg: {instrument_ids: ["dragoneye"]}, params: {bus: 40}},
-  {name: "Does not fit", note: "Chameleon on GSAT-20", cfg: {platform_id: "gsat_20", instrument_ids: ["chameleon"]}, params: {bus: 40}},
-  {name: "Not commandable", note: "transmit-only radio", cfg: {communication_system_ids: ["endurosat_x_band_transmitter"]}, params: {bus: 40}},
-  {name: "Wrong launcher orbit", note: "Vega C to SSO 500", cfg: {launch_vehicle_id: "vega_c"}, params: {bus: 40}},
-  {name: "Unknown mass", note: "TROPICS TMS", cfg: {instrument_ids: ["hyperscape100", "tropics_tms"]}, params: {bus: 40}},
+  {name: "Real data only", note: "FEASIBLE with the dataset's estimated bus mass", cfg: {}, params: {}},
+  {name: "With gameplay data rate", note: "partial data return", cfg: {}, params: {rate: 20000}},
+  {name: "GSAT-200 on Electron", note: "launch mass fails (bus ~300 kg)", cfg: {platform_id: "gsat_200"}, params: {}},
+  {name: "Unknown launch capacity", note: "Electron to SSO 600: CONDITIONAL", cfg: {orbit_id: "sso_600"}, params: {}},
+  {name: "Too heavy", note: "DragonEye on GSAT-50", cfg: {instrument_ids: ["dragoneye"]}, params: {}},
+  {name: "Does not fit", note: "Chameleon on GSAT-20", cfg: {platform_id: "gsat_20", instrument_ids: ["chameleon"]}, params: {}},
+  {name: "Not commandable", note: "transmit-only radio", cfg: {communication_system_ids: ["endurosat_x_band_transmitter"]}, params: {}},
+  {name: "Wrong launcher orbit", note: "Vega C to SSO 500", cfg: {launch_vehicle_id: "vega_c"}, params: {}},
+  {name: "Unknown mass", note: "TROPICS TMS", cfg: {instrument_ids: ["hyperscape100", "tropics_tms"]}, params: {}},
   {name: "Player-built power", note: "Mode B, sufficient", cfg: {power: {mode: "player_built_power_system",
-    solar_array_ids: ["dcubed_origami_100w"], battery_ids: ["space_inventor_bat28_p4"], eps_id: "endurosat_eps_i"}}, params: {bus: 40}},
+    solar_array_ids: ["dcubed_origami_100w"], battery_ids: ["space_inventor_bat28_p4"], eps_id: "endurosat_eps_i"}}, params: {}},
   {name: "Power B: battery too small", note: "eclipse energy fails", cfg: {power: {mode: "player_built_power_system",
-    solar_array_ids: ["dcubed_origami_100w"], battery_ids: ["exa_1u_battery_22wh"], eps_id: null}}, params: {bus: 40}},
-  {name: "Wrong instrument", note: "RGB only: objective fails", cfg: {instrument_ids: ["gecko"]}, params: {bus: 40}},
-  {name: "Coarse pointing", note: "1 deg ADCS warning", cfg: {adcs_system_id: "cubespace_cubeadcs_3axis_small"}, params: {bus: 40}},
+    solar_array_ids: ["dcubed_origami_100w"], battery_ids: ["exa_1u_battery_22wh"], eps_id: null}}, params: {}},
+  {name: "Wrong instrument", note: "RGB only: objective fails", cfg: {instrument_ids: ["gecko"]}, params: {}},
+  {name: "Coarse pointing", note: "1 deg ADCS warning", cfg: {adcs_system_id: "cubespace_cubeadcs_3axis_small"}, params: {}},
   {name: "Optical downlink", note: "needs optical station", cfg: {communication_system_ids: ["endurosat_s_band_transceiver", "cubecat"]},
-    params: {bus: 40, stations: ["uhf", "s_band", "x_band", "optical"], rate: 20000}},
+    params: {stations: ["uhf", "s_band", "x_band", "optical"], rate: 20000}},
 ];
 const BASE = {platform_id: "gsat_50", instrument_ids: ["hyperscape100"], power: {mode: "platform_payload_budget", solar_array_ids: [], battery_ids: [], eps_id: null},
   communication_system_ids: ["endurosat_s_band_transceiver", "endurosat_x_band_transmitter"], adcs_system_id: "cubespace_cubeadcs_3axis_small_star",
@@ -147,7 +149,7 @@ const kg = r => r.mass_kg == null ? "mass unknown" : r.mass_kg + " kg";
 function build() {
   const c = CAT.categories;
   opt($("scenario"), SCEN, s => s.name);
-  opt($("platform"), c.platforms, r => `${r.name}: ${r.payload_mass_capacity_kg} kg, ${r.payload_average_power_w} W, ${(r.price_usd / 1e6)} M USD`);
+  opt($("platform"), c.platforms, r => `${r.name}: ${r.payload_mass_capacity_kg} kg payload, ${r.payload_average_power_w} W, ${(r.price_usd / 1e6)} M USD, bus ${r.bus_mass_kg ?? "?"} kg (${r.bus_mass_basis || "unknown"})`);
   checks($("instruments"), c.instruments, r => `${r.family}, ${kg(r)}, GSD ${r.gsd_m ?? "?"} m, swath ${r.swath_km ?? "?"} km`, "inst");
   opt($("adcs"), c.adcs_systems, r => `${r.name}: ${r.pointing_accuracy_deg} deg (${r.pointing_metric}), ${kg(r)}`);
   checks($("comms"), c.communication_systems, r => `${r.family}, ${r.downlink_kbps} kbps down, commands: ${r.can_receive_commands === null ? "unknown" : r.can_receive_commands ? "yes" : "no"}, ${kg(r)}`, "comm");
@@ -275,12 +277,14 @@ function render(r) {
     <details><summary>Full JSON response</summary><pre>${esc(JSON.stringify(r, null, 1))}</pre></details></section>`;
 }
 function renderAlternatives(d) {
-  window._alts = d.alternatives;
+  const all = d.alternatives.concat(d.conditional_alternatives || []);
+  window._alts = all;
   const o = a => Object.entries(a.objectives).map(([k, v]) => `${k.replace(/_/g, " ")}: ${v == null ? "unknown" : k === "known_cost_usd" ? fmt(v) + " USD" : fmt(v * 100, 0) + "%"}`).join(" · ");
   const c = a => { const x = a.configuration; return [x.platform_id, x.instrument_ids.join("+"), x.adcs_system_id, x.communication_system_ids.join("+"), x.orbit_id, x.launch_vehicle_id].join(" · "); };
   $("out").innerHTML = `<section><h2>Recommended alternatives</h2>
-    <p class="mute">${esc(d.method)}. ${d.candidates_generated} candidates, ${d.candidates_not_infeasible} not infeasible, ${d.pareto_front_size} on the Pareto front.</p>
-    ${d.alternatives.map((a, i) => `<div class="alt"><h3>${esc(a.label)} ${badge(a.feasibility)}</h3><div>${esc(c(a))}</div><div class="mute">${esc(o(a))}</div>
+    <p class="mute">${esc(d.method)}. ${d.candidates_generated} candidates, ${d.candidates_feasible ?? "?"} fully verified, ${d.pareto_front_size} on the Pareto front.</p>
+    ${all.map((a, i) => `${i === d.alternatives.length ? '<h2 style="margin-top:14px">Conditional (a hard constraint cannot be verified)</h2>' : ""}
+      <div class="alt"><h3>${esc(a.label)} ${badge(a.feasibility)}</h3><div>${esc(c(a))}</div><div class="mute">${esc(o(a))}</div>
       <button data-alt="${i}" style="margin-top:6px">Load and run</button></div>`).join("") || "<span class='mute'>No alternative found.</span>"}
     <ul>${d.notes.map(n => `<li class="mute">${esc(n)}</li>`).join("")}</ul></section>`;
 }

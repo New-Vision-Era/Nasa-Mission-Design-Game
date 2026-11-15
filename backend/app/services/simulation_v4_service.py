@@ -25,7 +25,7 @@ from backend.app.storage.db import Database, now_iso
 class SimulationV4Service:
     def __init__(self, db: Database, data_dir: Path) -> None:
         self.db = db
-        self.catalog_path = data_dir / "equipment_v4.json"
+        self.catalog_path = data_dir / "equipment_v5.json"
         self.scenario_dir = data_dir / "scenarios_v4"
 
     # -- stateless ---------------------------------------------------------------
@@ -58,8 +58,7 @@ class SimulationV4Service:
 
     def launch(self, user: Optional[User], body: SimulationRunCreate) -> dict:
         seed = body.seed if body.seed is not None else secrets.randbelow(2**31)
-        result = self.run({"configuration": body.configuration,
-                           "scenario_parameters": body.scenario_parameters, "seed": seed})
+        result = self.run({"configuration": body.configuration, "seed": seed})  # scenario values only
         if result["feasibility"]["status"] == "INFEASIBLE":
             raise ApiError(
                 409, "not_launchable",
@@ -68,7 +67,6 @@ class SimulationV4Service:
                 extra={"result": result},
             )
         run_id, now = uuid.uuid4().hex, now_iso()
-        overrides = body.scenario_parameters or {}
         self.db.execute(
             "INSERT INTO simulation_runs (id, user_id, name, scenario_id, dataset_id, engine_version, seed, "
             "feasibility, outcome, score_total, uses_parameter_overrides, configuration_json, "
@@ -76,8 +74,8 @@ class SimulationV4Service:
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (run_id, user.id if user else None, body.name, result["scenario"]["id"], result["dataset_id"],
              result["engine_version"], seed, result["feasibility"]["status"], result["mission"]["outcome"],
-             result["score"]["total"], 1 if overrides else 0, json.dumps(result["configuration"]),
-             json.dumps(overrides), json.dumps(result), now),
+             result["score"]["total"], 0, json.dumps(result["configuration"]),
+             "{}", json.dumps(result), now),
         )
         return self._view(self._row(user, run_id))
 
@@ -99,8 +97,6 @@ class SimulationV4Service:
             "name": row["name"],
             "created_at": row["created_at"],
             "status": "completed",
-            "uses_parameter_overrides": bool(row["uses_parameter_overrides"]),
-            "scenario_parameters": json.loads(row["scenario_parameters_json"]),
             "result": json.loads(row["result_json"]),
         }
 
@@ -111,7 +107,7 @@ class SimulationV4Service:
         """A player's stored real-data runs, newest first."""
         rows = self.db.query(
             "SELECT id, name, scenario_id, dataset_id, seed, feasibility, outcome, score_total, "
-            "uses_parameter_overrides, created_at FROM simulation_runs WHERE user_id = ? "
+            "created_at FROM simulation_runs WHERE user_id = ? "
             "ORDER BY created_at DESC, rowid DESC LIMIT ? OFFSET ?",
             (user.id, max(1, min(limit, 200)), max(0, offset)),
         )
@@ -119,8 +115,7 @@ class SimulationV4Service:
             SimulationRunSummary(
                 run_id=r["id"], name=r["name"], scenario_id=r["scenario_id"], dataset_id=r["dataset_id"],
                 seed=r["seed"], feasibility=r["feasibility"], outcome=r["outcome"],
-                score_total=r["score_total"], uses_parameter_overrides=bool(r["uses_parameter_overrides"]),
-                created_at=r["created_at"],
+                score_total=r["score_total"], created_at=r["created_at"],
             )
             for r in rows
         ]

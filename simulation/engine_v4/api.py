@@ -5,7 +5,7 @@ Each handler returns (http_status, json_body). Errors use the backend's shape:
 Internal exceptions are never exposed to the client.
 
 `catalog_path` and `scenario_dir` let the backend point at its own data folder;
-left as None they default to <repo>/data/equipment_v4.json and <repo>/data/scenarios_v4.
+left as None they default to <repo>/data/equipment_v5.json and <repo>/data/scenarios_v4.
 """
 from __future__ import annotations
 

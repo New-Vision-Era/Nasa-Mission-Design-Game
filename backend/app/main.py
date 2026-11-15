@@ -44,7 +44,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             "code": "internal_error", "message": "Something went wrong on the server.", "field": None}})
 
     # Earth-observation routes are preserved; the Mars rover API and the
-    # real-data simulation engine (equipment_v4) are additive.
+    # real-data simulation engine (simulation/engine_v4, data/equipment_v5.json) are additive.
     for module in (catalog, evaluate, auth, missions, runs, mars, simulation_v4):
         app.include_router(module.router, prefix=API_PREFIX)
 

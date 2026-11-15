@@ -68,7 +68,7 @@ def test_dataset_loads_with_expected_counts(catalog):
     counts = {c: len(catalog.all(c)) for c in CATEGORIES}
     assert counts == {"platforms": 3, "instruments": 21, "power_systems": 17, "communication_systems": 8,
                       "propulsion_systems": 9, "adcs_systems": 7, "orbits": 5, "launch_vehicles": 7}
-    assert catalog.dataset_id == "equipment_v4"
+    assert catalog.dataset_id == "equipment_v5"
     assert catalog.issues == []
 
 
@@ -79,11 +79,20 @@ def test_component_ids_unique_within_category(raw):
 
 
 def test_missing_values_remain_none(catalog):
-    assert catalog.get("platforms", "gsat_20")["bus_mass_kg"] is None
+    assert catalog.get("platforms", "gsat_20")["design_lifetime_years"] is None
     assert catalog.get("platforms", "gsat_20")["includes_power_hardware"] is None
     assert catalog.get("instruments", "argus_1000")["power_operating_w"] is None
     assert catalog.get("instruments", "tropics_tms")["mass_kg"] is None
     assert catalog.get("orbits", "sso_500")["orbital_lifetime_years"] is None
+
+
+def test_v5_bus_mass_fields_are_loaded_unchanged(catalog):
+    expected = {"gsat_20": (20, [15, 22], "estimate"), "gsat_50": (50, [40, 60], "estimate"),
+                "gsat_200": (300, [250, 300], "derived")}
+    for pid, (kg, rng, basis) in expected.items():
+        p = catalog.get("platforms", pid)
+        assert (p["bus_mass_kg"], p["bus_mass_range_kg"], p["bus_mass_basis"]) == (kg, rng, basis)
+        assert p["bus_mass_method"] and p["bus_mass_sources"]
 
 
 def test_source_metadata_and_v4_fields_preserved(catalog, raw):
@@ -163,8 +172,8 @@ def test_mass_passes_and_is_payload_only():
     result = run()
     c = constraint(result, "payload_mass")
     assert c["status"] == PASS
-    assert c["actual_value"] == pytest.approx(1.1 + 0.61 + 0.246 + 0.396)
-    assert result["resources"]["total_spacecraft_mass_kg"]["value"] is None  # bus mass unknown
+    assert c["actual_value"] == pytest.approx(1.1 + 0.61 + 0.246 + 0.396)  # payload only, bus not included
+    assert result["resources"]["total_spacecraft_mass_kg"]["value"] == pytest.approx(50 + 2.352)
 
 
 def test_mass_limit_exceeded():
@@ -418,9 +427,13 @@ def test_propulsion_burn_time_and_delta_v():
     assert propulsion.burn_time_s(5300, 0.00035) == pytest.approx(5300 / 0.00035)
     assert propulsion.delta_v_m_s(565, 4) == pytest.approx(141.25)
     assert propulsion.delta_v_m_s(565, None) is None
-    no_mass = run(config(propulsion_system_id="busek_bgt_x5"))
-    assert constraint(no_mass, "delta_v")["status"] == NOT_EVALUATED
-    assert no_mass["propulsion"]["burn_time_s"] == pytest.approx(1130)
+    dataset = run(config(propulsion_system_id="busek_bgt_x5"))
+    dv = constraint(dataset, "delta_v")
+    assert dv["status"] == PASS and dv["value_kind"] == "estimate"  # rests on the estimated bus mass
+    assert dataset["propulsion"]["delta_v_m_s"] == pytest.approx(565 / (50 + 2.352 + 1.5), abs=1e-3)
+    assert dataset["propulsion"]["burn_time_s"] == pytest.approx(1130)
+    unknown = run(config(propulsion_system_id="busek_bgt_x5", instrument_ids=["hyperscape100", "tropics_tms"]))
+    assert constraint(unknown, "delta_v")["status"] == NOT_EVALUATED  # payload mass partly unknown
     with_mass = run(config(propulsion_system_id="busek_bgt_x5"), bus_mass_kg_assumption=40)
     total = 40 + 1.1 + 0.61 + 0.246 + 0.396 + 1.5
     assert with_mass["propulsion"]["delta_v_m_s"] == pytest.approx(565 / total, abs=1e-3)
@@ -472,18 +485,76 @@ def test_missing_capacity_point_not_evaluated():
     assert constraint(capped, "launch_mass")["status"] == PASS
 
 
-def test_unknown_total_mass_not_evaluated():
-    c = constraint(run(), "launch_mass")
+def test_unknown_total_mass_not_evaluated(raw):
+    no_bus = copy.deepcopy(raw)
+    for p in no_bus["platforms"]:
+        p["bus_mass_kg"] = None
+    c = constraint(run_simulation(config(), None, 0, Catalog(no_bus)), "launch_mass")
     assert c["status"] == NOT_EVALUATED and c["actual_value"] is None and c["limit_value"] == 200
+    partial = constraint(run(config(instrument_ids=["hyperscape100", "tropics_tms"])), "launch_mass")
+    assert partial["status"] == NOT_EVALUATED and partial["actual_value"] is None  # never zero for tropics_tms
+
+
+def test_bus_mass_comes_from_dataset_with_basis_and_range():
+    result = run()
+    c = constraint(result, "launch_mass")
+    assert c["status"] == PASS and c["value_kind"] == "estimate"
+    assert "42.4-62.4 kg" in c["message"] and any("dry" in a for a in c["assumptions"])
+    assert result["resources"]["bus_mass_kg"] == {
+        "value": 50.0, "unit": "kg", "basis": "estimate", "range": [40.0, 60.0],
+        "note": result["resources"]["bus_mass_kg"]["note"]}
+    assert result["resources"]["total_spacecraft_mass_kg"]["range"] == pytest.approx([42.352, 62.352])
+    prov = result["provenance"]["components"]["gsat_50"]
+    assert prov["bus_mass_basis"] == "estimate" and prov["bus_mass_range_kg"] == [40, 60] and prov["bus_mass_method"]
+    big = run(config(platform_id="gsat_200", launch_vehicle_id="firefly_alpha"))
+    assert constraint(big, "launch_mass")["value_kind"] == "derived"
+    assert big["provenance"]["components"]["gsat_200"]["price_note"]
+
+
+def test_gsat_200_is_too_heavy_for_electron():
+    result = run(config(platform_id="gsat_200"))
+    c = constraint(result, "launch_mass")
+    assert c["status"] == FAIL and c["actual_value"] == pytest.approx(300 + 2.352) and c["limit_value"] == 200
+    assert result["feasibility"]["status"] == INFEASIBLE
+    assert constraint(run(config(platform_id="gsat_200", launch_vehicle_id="firefly_alpha")),
+                      "launch_mass")["status"] == PASS  # 630 kg to SSO 500
+
+
+@pytest.mark.parametrize("capacity,status,phrase", [
+    (55, WARNING, "top of the bus-mass range"),   # 52.4 fits, 62.4 would not
+    (45, FAIL, "low end of the bus-mass range"),  # 52.4 does not fit, 42.4 would
+    (70, PASS, "is within"),
+])
+def test_bus_mass_range_is_used_for_launch_margin(raw, capacity, status, phrase):
+    data = copy.deepcopy(raw)
+    electron = [lv for lv in data["launch_vehicles"] if lv["id"] == "rocket_lab_electron"][0]
+    electron["capacity_points"][0]["mass_kg"] = capacity
+    result = run_simulation(config(), None, 0, Catalog(data))
+    c = constraint(result, "launch_mass")
+    assert c["status"] == status and phrase in c["message"]
+    if status == WARNING:  # a warning never makes the design infeasible or conditional
+        assert result["feasibility"]["status"] == FEASIBLE and "launch_mass" in result["feasibility"]["warnings"]
+
+
+def test_scenario_bus_mass_override_beats_dataset_and_is_labelled():
+    result = run(bus_mass_kg_assumption=40)
+    c = constraint(result, "launch_mass")
+    assert c["actual_value"] == pytest.approx(42.352) and c["value_kind"] == "gameplay_assumption"
+    assert result["resources"]["total_spacecraft_mass_kg"]["range"] is None
 
 
 def test_rideshare_price_model():
-    unknown = run(config(launch_vehicle_id="spacex_transporter_rideshare"))
+    unknown = run(config(launch_vehicle_id="spacex_transporter_rideshare", instrument_ids=["hyperscape100", "tropics_tms"]))
     assert unknown["resources"]["launch_price_usd"]["value"] is None
     assert constraint(unknown, "budget")["status"] == NOT_EVALUATED
-    known = run(config(launch_vehicle_id="spacex_transporter_rideshare"), bus_mass_kg_assumption=60)
-    mass_kg = 60 + 2.352
-    assert known["resources"]["launch_price_usd"]["value"] == pytest.approx(350000 + 7000 * (mass_kg - 50))
+    known = run(config(launch_vehicle_id="spacex_transporter_rideshare"))  # dataset bus mass 50 kg
+    price = known["resources"]["launch_price_usd"]
+    assert price["value"] == pytest.approx(350000 + 7000 * (52.352 - 50))
+    assert price["value_kind"] == "estimate"
+    # platform + rideshare + the S-band transceiver's published 14,000 USD
+    assert constraint(known, "budget")["actual_value"] == pytest.approx(1_500_000 + 350000 + 7000 * 2.352 + 14000)
+    heavy = run(config(launch_vehicle_id="spacex_transporter_rideshare"), bus_mass_kg_assumption=60)
+    assert heavy["resources"]["launch_price_usd"]["value"] == pytest.approx(350000 + 7000 * (62.352 - 50))
     light = run(config(launch_vehicle_id="spacex_transporter_rideshare"), bus_mass_kg_assumption=20)
     assert light["resources"]["launch_price_usd"]["value"] == 350000
 
@@ -501,7 +572,7 @@ def test_budget_exceeded():
 
 # ---------------------------------------------------------------- overall
 def test_feasible_configuration():
-    result = run(bus_mass_kg_assumption=40)
+    result = run()  # real data only, since equipment_v5
     assert result["feasibility"] == {"status": FEASIBLE, "hard_failed": [], "hard_not_evaluated": [],
                                      "warnings": []}
     assert result["mission"]["outcome"] == "SUCCESS"
@@ -517,7 +588,7 @@ def test_infeasible_configuration_is_not_flown_and_is_flagged():
 
 
 def test_conditional_configuration():
-    result = run()
+    result = run(config(orbit_id="sso_600"))  # Electron publishes no SSO 600 km capacity
     assert result["feasibility"]["status"] == CONDITIONAL
     assert result["feasibility"]["hard_not_evaluated"] == ["launch_mass"]
     assert result["mission"]["conditional_launch"] is True
@@ -607,12 +678,13 @@ def test_dominance_treats_unknown_as_worst():
 
 
 def test_recommendations_are_non_dominated_and_not_infeasible():
-    out = recommend(config(), {"bus_mass_kg_assumption": 40})
+    out = recommend(config())
     assert 1 <= len(out["alternatives"]) <= 5
     assert out["candidates_generated"] < 20000
     for alt in out["alternatives"]:
-        assert alt["feasibility"] != INFEASIBLE and alt["label"]
-        run_simulation(alt["configuration"], {"bus_mass_kg_assumption": 40})  # every alternative is runnable
+        assert alt["feasibility"] == FEASIBLE and alt["label"]  # recommended designs are fully verified
+        run_simulation(alt["configuration"])  # every alternative is runnable
+    assert all(a["feasibility"] == CONDITIONAL for a in out["conditional_alternatives"])
     for a in out["alternatives"]:
         assert not any(dominates(b, a) for b in out["alternatives"] if b is not a)
 
@@ -622,7 +694,7 @@ def test_api_run_ok_with_example_file():
     with open(ENGINE_DIR / "examples" / "example_mission.json", "r", encoding="utf-8") as fh:
         body = json.load(fh)
     status, result = api.handle_run_request(body)
-    assert status == 200 and result["feasibility"]["status"] == CONDITIONAL
+    assert status == 200 and result["feasibility"]["status"] == FEASIBLE
     for key in ("configuration", "feasibility", "resources", "constraints", "performance", "score", "mission",
                 "explanations", "assumptions", "limitations", "provenance"):
         assert key in result
@@ -705,7 +777,7 @@ def test_devui_serves_page_catalog_and_run():
         with urllib.request.urlopen(base + "/api/scenarios") as resp:
             assert json.loads(resp.read())["scenarios"][0]["id"] == SCENARIO
         status, body = post("/api/run", {"configuration": config(), "seed": 1})
-        assert status == 200 and body["feasibility"]["status"] == CONDITIONAL
+        assert status == 200 and body["feasibility"]["status"] == FEASIBLE
         status, body = post("/api/run", {"configuration": config(platform_id="nope")})
         assert status == 422 and body["error"]["code"] == "unknown_component"
     finally:

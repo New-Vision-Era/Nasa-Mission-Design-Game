@@ -51,13 +51,14 @@ def check_propulsion(sel: Selection, params: ScenarioParams, total_mass: dict) -
                else "Total impulse is not published.")
         return [ConstraintResult(status=NOT_EVALUATED, value_kind=DERIVED, assumptions=assumptions,
                                  message=f"Delta-v is not evaluated. {why}{burn_txt}", **base)], info
-    assumptions.append("Spacecraft mass includes a bus-mass GAMEPLAY ASSUMPTION.")
+    assumptions.append(total_mass.get("reason"))
+    mass_kind = total_mass.get("value_kind") or GAMEPLAY
     if need and dv < need:
-        return [ConstraintResult(status=FAIL, actual_value=round(dv, 2), value_kind=GAMEPLAY,
+        return [ConstraintResult(status=FAIL, actual_value=round(dv, 2), value_kind=mass_kind,
                                  assumptions=assumptions,
                                  message=f"About {dv:.1f} m/s available; the scenario needs {need:g} m/s.{burn_txt}",
                                  **base)], info
-    return [ConstraintResult(status=PASS, actual_value=round(dv, 2), value_kind=GAMEPLAY, assumptions=assumptions,
+    return [ConstraintResult(status=PASS, actual_value=round(dv, 2), value_kind=mass_kind, assumptions=assumptions,
                              message=f"About {dv:.1f} m/s of delta-v available"
                                      + (f" (needs {need:g} m/s)." if need else ".") + burn_txt, **base)], info
 

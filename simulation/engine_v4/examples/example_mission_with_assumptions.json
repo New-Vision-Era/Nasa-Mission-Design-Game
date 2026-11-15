@@ -11,7 +11,6 @@
     "launch_vehicle_id": "rocket_lab_electron"
   },
   "scenario_parameters": {
-    "bus_mass_kg_assumption": 40,
     "data_generation_kbps": {"hyperscape100": 20000}
   },
   "seed": 42

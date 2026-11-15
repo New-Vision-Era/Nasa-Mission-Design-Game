@@ -1,21 +1,18 @@
 # Simulation engine v4 (MVP)
 
-A small, deterministic engineering engine on the real `equipment_v4.json` dataset. It is a simplified
+A small, deterministic engineering engine on the real `equipment_v5.json` dataset. It is a simplified
 game model, not a high-fidelity simulator.
 
-## Install into the repository
-
-Copy these into the repository root (nothing existing is overwritten):
+## Files
 
 | Path | What |
 | --- | --- |
-| `simulation/engine_v4/` | The engine package and its tests |
-| `data/equipment_v4.json` | Canonical dataset (unchanged copy) |
+| `simulation/engine_v4/` | The engine package, its tests, examples and the developer test page |
+| `data/equipment_v5.json` | Canonical dataset (research handoff v5, unchanged copy) |
 | `data/scenarios_v4/earth_observation_v4.json` | Scenario: requirements and gameplay assumptions |
-| `examples/*.json` | Example request bodies |
-| `backend_integration/simulation_v4_router.py` | FastAPI wrapper, to copy to `backend/app/api/` (not yet executed) |
+| `backend/app/api/simulation_v4.py`, `backend/app/services/simulation_v4_service.py` | Backend routes and stored runs |
 
-`simulation/__init__.py` in this bundle is an empty file; keep yours if it exists.
+The package is still named `engine_v4` (the engine version); it reads dataset v5.
 Dependencies: `pydantic` v2 and `pytest`, both already in the project.
 
 ## Run
@@ -45,7 +42,7 @@ from simulation.engine_v4 import run_simulation
 result = run_simulation(configuration_dict, scenario_parameters=None, seed=42)
 ```
 
-Dataset path order: `EQUIPMENT_V4_PATH` environment variable, else `data/equipment_v4.json`.
+Dataset path order: `EQUIPMENT_DATA_PATH` environment variable, else `data/equipment_v5.json`.
 
 ## API
 
@@ -64,7 +61,6 @@ Dataset path order: `EQUIPMENT_V4_PATH` environment variable, else `data/equipme
     "orbit_id": "sso_500",
     "launch_vehicle_id": "rocket_lab_electron"
   },
-  "scenario_parameters": {"bus_mass_kg_assumption": 40},
   "seed": 42
 }
 ```
@@ -101,8 +97,17 @@ existing design, call `handle_run_request` from `backend/app/services/engine_ada
   known part alone already exceeds the limit, in which case it is `FAIL`.
 - `FEASIBLE`: every hard constraint passes. `INFEASIBLE`: any hard constraint fails. `CONDITIONAL`: none
   fails but at least one hard constraint could not be evaluated.
-- Payload mass is not spacecraft mass. Total mass, launch-mass fit, rideshare price and delta-v need
-  `bus_mass_kg_assumption`, a labelled gameplay value. It is `null` in the shipped scenario.
+- Payload mass is not spacecraft mass. Total mass = the platform's `bus_mass_kg` + payload. Since dataset
+  v5 the bus mass is filled but is not a manufacturer value: `bus_mass_basis` is `estimate` (GSAT-20,
+  GSAT-50) or `derived` (GSAT-200), and results that use it carry that value kind. It is dry: propellant
+  in the bus is not counted.
+- The bus-mass range (`bus_mass_range_kg`) is reported with every result that uses it. Launch mass is
+  judged at the stated value; if the top of the range would exceed the launcher's capacity, the check is a
+  `WARNING`, not a pass.
+- A scenario may set `bus_mass_kg_assumption` to override the dataset value (labelled gameplay). Only the
+  stateless `/simulation/run` sandbox accepts scenario overrides; stored runs (`/simulation/runs`) do not.
+- Recommendations list only `FEASIBLE` designs. `CONDITIONAL` designs are listed separately, so a
+  launcher whose capacity cannot be checked does not win because of it.
 - Launch capacity points apply only to their own orbit type and altitude.
 - Power mode is explicit. Mode A never adds solar arrays to the budget; Mode B never adds the platform
   figure to generation.
@@ -116,7 +121,8 @@ existing design, call `handle_run_request` from `backend/app/services/engine_ada
 | Orbit figures, GSD and swath at orbit, coverage rate, pointing offset, burn time | Derived |
 | Power demand | Published powers, gameplay duty cycles, upper bounds where standby is unknown |
 | Downlink capacity | Published rate, derived pass length, gameplay pass count and availability |
-| Combined volume fit, total mass, delta-v, rideshare price, Mode B generation and battery | Depend on a gameplay assumption |
+| Total mass, launch-mass fit, delta-v, rideshare price | Estimated or derived bus mass (dataset v5) plus published payload masses |
+| Combined volume fit, Mode B generation and battery | Depend on a gameplay assumption |
 | Science rules, score weights, events, outcome thresholds | Gameplay |
 
 ## Decisions the team should confirm
@@ -124,6 +130,6 @@ existing design, call `handle_run_request` from `backend/app/services/engine_ada
 1. Selected subsystems count against the platform payload mass and power (conservative; ownership unknown).
 2. Volume is checked for instruments only (`volume_scope`); most subsystem dimensions are unpublished.
 3. The budget covers platform plus launch; unpriced components are listed, not costed.
-4. Whether to set `bus_mass_kg_assumption` in the scenario. Without it every design is `CONDITIONAL`.
+4. Bus masses are research estimates (dataset v5). If GITAI confirms a figure, update the dataset only.
 5. Rideshare has no published mass cap, so its launch-mass check stays `NOT_EVALUATED` unless
    `rideshare_mass_cap_kg_assumption` is set.

@@ -17,7 +17,7 @@ def evaluate_engineering(sel: Selection, params: ScenarioParams) -> dict[str, An
 
     mass_result, budget = mass.check_payload_mass(sel, params)
     results.append(mass_result)
-    total_mass = mass.total_spacecraft_mass(budget, params)
+    total_mass = mass.total_spacecraft_mass(budget, params, sel.platform)
 
     results.append(volume.check_volume(sel, params))
 
@@ -51,7 +51,12 @@ def evaluate_engineering(sel: Selection, params: ScenarioParams) -> dict[str, An
         "payload_mass_capacity_kg": {"value": sel.platform.get("payload_mass_capacity_kg"), "unit": "kg",
                                      "value_kind": "published"},
         "total_spacecraft_mass_kg": {"value": total_mass["value_kg"], "unit": "kg",
-                                     "value_kind": total_mass["value_kind"], "note": total_mass["reason"]},
+                                     "value_kind": total_mass["value_kind"], "range": total_mass["range_kg"],
+                                     "note": total_mass["reason"]},
+        "bus_mass_kg": {"value": total_mass["bus_mass_kg"], "unit": "kg", "basis": total_mass["bus_mass_basis"],
+                        "range": total_mass["bus_mass_range_kg"],
+                        "note": "Platform without payload, dry. Not a manufacturer value unless basis is "
+                                "'published'."},
         "power_demand_avg_w": {"value": demand["known_avg_w"], "unit": "W",
                                "complete": not demand["unknown_ids"],
                                "unknown_component_ids": demand["unknown_ids"],

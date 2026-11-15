@@ -16,7 +16,7 @@ from ..constraints.volume import fits_envelope
 from ..data_loader import Catalog, load_catalog
 from ..engine import evaluate_design
 from ..mission.scoring import reliability_category
-from ..results import INFEASIBLE
+from ..results import CONDITIONAL, FEASIBLE, INFEASIBLE
 
 OBJECTIVES = ("science", "reliability", "known_cost_usd", "mass_margin", "power_margin")
 MINIMISE = {"known_cost_usd"}
@@ -130,18 +130,26 @@ def recommend(config: Any, scenario_parameters: Optional[dict] = None, catalog: 
         if evaluation["feasibility"]["status"] == INFEASIBLE or not performance["has_required_instrument"]:
             continue
         kept.append(_summarise(cfg, sel, evaluation, performance, params))
-    front = pareto_front(kept)
-    picks = _diverse(front, max_results)
+    # Recommend only designs whose hard constraints are all verified. CONDITIONAL designs are
+    # listed apart: an unverifiable launch capacity must not win because it cannot be checked.
+    feasible = [c for c in kept if c["feasibility"] == FEASIBLE]
+    conditional = [c for c in kept if c["feasibility"] == CONDITIONAL]
+    front = pareto_front(feasible)
+    conditional_front = pareto_front(conditional)
     return {
         "method": "bounded candidate enumeration + Pareto filter (no weights)",
         "objectives": {k: ("minimise" if k in MINIMISE else "maximise") for k in OBJECTIVES},
         "candidates_generated": len(generated),
         "candidates_not_infeasible": len(kept),
+        "candidates_feasible": len(feasible),
         "pareto_front_size": len(front),
-        "alternatives": picks,
+        "alternatives": _diverse(front, max_results),
+        "conditional_alternatives": _diverse(conditional_front, min(3, max_results)),
         "notes": ["Not exhaustive: one science instrument per candidate and a reduced set of subsystem kits.",
                   "Unknown cost or margin is treated as worse than any known value, never as zero.",
-                  "CONDITIONAL designs still have hard constraints that real data cannot confirm."],
+                  "'alternatives' are FEASIBLE: every hard constraint is verified. 'conditional_alternatives' "
+                  "have at least one hard constraint that the data cannot check (often launch capacity) and "
+                  "are listed separately, not ranked against verified designs."],
     }
 
 

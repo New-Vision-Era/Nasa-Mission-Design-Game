@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ..configuration import ScenarioParams, Selection
-from ..results import (FAIL, GAMEPLAY, HARD, MIXED, NOT_EVALUATED, PASS, PUBLISHED, ConstraintResult,
+from ..results import (FAIL, GAMEPLAY, HARD, MIXED, NOT_EVALUATED, PASS, PUBLISHED, WARNING, ConstraintResult,
                        source_urls)
 
 
@@ -55,7 +55,9 @@ def check_orbit_support(sel: Selection) -> ConstraintResult:
 def check_launch_mass(sel: Selection, params: ScenarioParams, total_mass: dict) -> ConstraintResult:
     lv, orbit = sel.launcher, sel.orbit
     base = dict(id="launch_mass", category="launch", title="Launch mass capacity", severity=HARD, unit="kg",
-                affected_component_ids=[lv["id"]], source_urls=source_urls(lv, sel.platform),
+                affected_component_ids=[lv["id"]],
+                source_urls=source_urls(lv, sel.platform) + [u for u in total_mass.get("source_urls") or []
+                                                             if u not in source_urls(lv, sel.platform)],
                 related_step="launch_vehicle", actual_value=total_mass.get("value_kg"))
     rule = lv.get("capacity_rule") or "A capacity point applies only to its own orbit type and altitude."
     point = matching_capacity_point(lv, orbit)
@@ -82,14 +84,24 @@ def check_launch_mass(sel: Selection, params: ScenarioParams, total_mass: dict) 
             status=NOT_EVALUATED, value_kind=limit_kind, assumptions=[rule],
             message=f"The launcher has a {limit_note}, but total spacecraft launch mass is not known. "
                     f"{total_mass.get('reason')}", **base)
-    mass = total_mass["value_kg"]
+    mass, rng = total_mass["value_kg"], total_mass.get("range_kg")
     assumptions = [rule, total_mass.get("reason")]
-    kind = GAMEPLAY  # total mass rests on the bus-mass assumption
+    kind = total_mass.get("value_kind") or GAMEPLAY  # the total rests on the bus mass and its basis
+    range_txt = f" (bus-mass range gives {rng[0]:.1f}-{rng[1]:.1f} kg)" if rng else ""
     if mass > limit:
+        tail = (f" At the low end of the bus-mass range ({rng[0]:.1f} kg) it would fit, but not at the stated "
+                "value." if rng and rng[0] <= limit else "")
         return ConstraintResult(status=FAIL, value_kind=kind, assumptions=assumptions,
-                                message=f"Spacecraft mass {mass:.1f} kg exceeds the {limit_note}.", **base)
+                                message=f"Spacecraft mass {mass:.1f} kg{range_txt} exceeds the {limit_note}.{tail}",
+                                **base)
+    if rng and rng[1] > limit:
+        return ConstraintResult(
+            status=WARNING, value_kind=kind, assumptions=assumptions,
+            message=f"Spacecraft mass {mass:.1f} kg is within the {limit_note}, but the top of the bus-mass range "
+                    f"({rng[1]:.1f} kg) would exceed it. The bus mass is not a manufacturer value, so this margin "
+                    "is uncertain.", **base)
     return ConstraintResult(status=PASS, value_kind=kind, assumptions=assumptions,
-                            message=f"Spacecraft mass {mass:.1f} kg is within the {limit_note}.", **base)
+                            message=f"Spacecraft mass {mass:.1f} kg{range_txt} is within the {limit_note}.", **base)
 
 
 def launch_price(sel: Selection, total_mass: dict) -> dict:
@@ -102,11 +114,16 @@ def launch_price(sel: Selection, total_mass: dict) -> dict:
             return {"value_usd": None, "lower_bound_usd": model.get("base_usd"), "value_kind": None,
                     "reason": "Rideshare is priced by mass, and total spacecraft mass is unknown. "
                               f"The price is at least {model.get('base_usd'):,} USD."}
-        price = model["base_usd"] + model["extra_usd_per_kg"] * max(0.0, mass - model["base_mass_kg"])
-        return {"value_usd": round(price, 2), "lower_bound_usd": round(price, 2), "value_kind": GAMEPLAY,
+        def price_at(m: float) -> float:
+            return round(model["base_usd"] + model["extra_usd_per_kg"] * max(0.0, m - model["base_mass_kg"]), 2)
+        price, rng = price_at(mass), total_mass.get("range_kg")
+        range_usd = [price_at(rng[0]), price_at(rng[1])] if rng else None
+        range_txt = f" The bus-mass range gives {range_usd[0]:,.0f}-{range_usd[1]:,.0f} USD." if range_usd else ""
+        return {"value_usd": price, "lower_bound_usd": price, "range_usd": range_usd,
+                "value_kind": total_mass.get("value_kind") or GAMEPLAY,
                 "reason": f"Published price model ({model['base_usd']:,} USD up to {model['base_mass_kg']:g} kg, "
-                          f"+{model['extra_usd_per_kg']:,} USD/kg) applied to a mass that includes the bus-mass "
-                          "gameplay assumption."}
+                          f"+{model['extra_usd_per_kg']:,} USD/kg) applied to a total mass of {mass:.1f} kg, which "
+                          f"uses the platform bus mass ({total_mass.get('bus_mass_basis')}).{range_txt}"}
     if lv.get("price_usd") is not None:
         kind = PUBLISHED if lv.get("price_type") == "published" else "estimate"
         return {"value_usd": lv["price_usd"], "lower_bound_usd": lv["price_usd"], "value_kind": kind,

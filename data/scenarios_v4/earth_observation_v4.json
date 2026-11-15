@@ -3,7 +3,7 @@
   "name": "Vegetation health monitoring from low Earth orbit",
   "briefing": "Your team must fly a small Earth-observation spacecraft that images farmland in several spectral bands so analysts can track vegetation health for one year. You need multispectral or hyperspectral imagery at 10 m resolution or better over a swath of at least 15 km, from a sun-synchronous orbit so lighting stays consistent between visits.",
   "value_kind": "gameplay_assumption",
-  "notes": "Every value under 'parameters' is a scenario requirement or a GAMEPLAY ASSUMPTION chosen for the game. None is a published real-world specification. bus_mass_kg_assumption is null on purpose: platform bus mass is unknown, so launch mass and rideshare price stay NOT_EVALUATED unless the team sets an explicit assumption. data_generation_kbps is empty on purpose: instrument data rates are not published and none is invented.",
+  "notes": "Every value under 'parameters' is a scenario requirement or a GAMEPLAY ASSUMPTION chosen for the game. None is a published real-world specification. bus_mass_kg_assumption is null on purpose: the engine then uses each platform's bus_mass_kg from the dataset (an estimate or derived value since equipment_v5). Set it only to override that value for testing. data_generation_kbps is empty on purpose: instrument data rates are not published and none is invented.",
   "parameters": {
     "mission_duration_days": 365,
     "budget_usd": 12000000,

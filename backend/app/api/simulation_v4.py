@@ -1,4 +1,4 @@
-"""Real-data simulation engine (equipment_v4). Additive: no existing route changes.
+"""Real-data simulation engine (dataset equipment_v5). Additive: no existing route changes.
 
 Thin wrapper only. All logic lives in simulation.engine_v4, which is tested
 without a web framework. The backend never computes or adjusts a score here.
@@ -32,7 +32,8 @@ def v4_scenarios(container: ContainerDep) -> dict[str, Any]:
 def v4_run(container: ContainerDep, body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Validate, evaluate, simulate, score and explain one configuration. Stateless: nothing is stored.
 
-    Body: {"configuration": {...}, "scenario_parameters": {...}?, "seed": int?}.
+    Body: {"configuration": {...}, "scenario_parameters": {...}?, "seed": int?}. This is the sandbox:
+    scenario_parameters may override gameplay values here, but never on stored runs.
     An infeasible design is a normal 200 result with failed constraints.
     """
     return container.simulation_v4.run(body)
@@ -47,6 +48,9 @@ def v4_recommend(container: ContainerDep, body: dict[str, Any] = Body(...)) -> d
 @router.post("/runs", status_code=201)
 def v4_launch(body: SimulationRunCreate, user: OptionalUser, container: ContainerDep) -> dict[str, Any]:
     """Launch a design with the real-data engine and store the result.
+
+    Body: {"configuration": {...}, "seed": int?, "name": str?}. The scenario's own parameters
+    are always used; scenario_parameters is rejected (422).
 
     Logged in: the run is saved to the player's history. Guest: the run is stored
     without an owner and appears in no history. 409 not_launchable if a hard

@@ -35,32 +35,42 @@ def test_v4_catalog_and_scenarios(client):
     cat = client.get(f"{API}/catalog")
     assert cat.status_code == 200
     body = cat.json()
-    assert body["dataset_id"] == "equipment_v4"
+    assert body["dataset_id"] == "equipment_v5"
     assert {k: len(v) for k, v in body["categories"].items()} == {
         "platforms": 3, "instruments": 21, "power_systems": 17, "communication_systems": 8,
         "propulsion_systems": 9, "adcs_systems": 7, "orbits": 5, "launch_vehicles": 7}
-    assert body["categories"]["platforms"][0]["bus_mass_kg"] is None  # null stays null over HTTP
+    assert body["categories"]["platforms"][0]["design_lifetime_years"] is None  # null stays null over HTTP
+    assert body["categories"]["platforms"][0]["bus_mass_basis"] == "estimate"
     scenarios = client.get(f"{API}/scenarios").json()["scenarios"]
     assert scenarios[0]["id"] == "earth_observation_v4"
 
 
-def test_v4_run_real_data_is_conditional(client):
+def test_v4_run_real_data_is_feasible(client):
     r = client.post(f"{API}/run", json={"configuration": CONFIG, "seed": 42})
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["feasibility"]["status"] == "CONDITIONAL"
-    assert body["feasibility"]["hard_not_evaluated"] == ["launch_mass"]
+    assert body["dataset_id"] == "equipment_v5"
+    assert body["feasibility"]["status"] == "FEASIBLE"
+    assert body["feasibility"]["hard_not_evaluated"] == []
+    assert body["resources"]["bus_mass_kg"]["basis"] == "estimate"
     assert body["mission"]["outcome"] == "SUCCESS"
     assert 0 <= body["score"]["total"] <= 100
     for key in ("constraints", "resources", "performance", "explanations", "assumptions", "provenance"):
         assert key in body
 
 
-def test_v4_run_with_gameplay_assumptions_is_feasible(client):
+def test_v4_run_unknown_launch_capacity_is_conditional(client):
+    r = client.post(f"{API}/run", json={"configuration": {**CONFIG, "orbit_id": "sso_600"}})
+    assert r.status_code == 200
+    assert r.json()["feasibility"]["hard_not_evaluated"] == ["launch_mass"]
+
+
+def test_v4_run_sandbox_still_accepts_overrides(client):
     r = client.post(f"{API}/run", json={"configuration": CONFIG,
                                         "scenario_parameters": {"bus_mass_kg_assumption": 40}})
     assert r.status_code == 200
-    assert r.json()["feasibility"]["status"] == "FEASIBLE"
+    launch = [c for c in r.json()["constraints"] if c["id"] == "launch_mass"][0]
+    assert launch["value_kind"] == "gameplay_assumption"
 
 
 def test_v4_infeasible_design_is_a_normal_200(client):
@@ -90,8 +100,7 @@ def test_v4_errors_use_the_backend_error_shape(client, payload, status, code):
 
 
 def test_v4_recommend(client):
-    r = client.post(f"{API}/recommend", json={"configuration": CONFIG,
-                                              "scenario_parameters": {"bus_mass_kg_assumption": 40}})
+    r = client.post(f"{API}/recommend", json={"configuration": CONFIG})
     assert r.status_code == 200
     alternatives = r.json()["alternatives"]
     assert 1 <= len(alternatives) <= 5
@@ -122,7 +131,7 @@ def test_v4_launch_history_and_read_back(client):
     r = client.post(f"{API}/runs", headers=ada, json={"configuration": CONFIG, "seed": 3, "name": "Demo"})
     assert r.status_code == 201, r.text
     run = r.json()
-    assert run["result"]["feasibility"]["status"] == "CONDITIONAL" and run["name"] == "Demo"
+    assert run["result"]["feasibility"]["status"] == "FEASIBLE" and run["name"] == "Demo"
 
     history = client.get(f"{API}/runs", headers=ada).json()
     assert [h["run_id"] for h in history] == [run["run_id"]]
@@ -147,3 +156,6 @@ def test_v4_guest_launch_and_infeasible_launch(client):
 
     assert client.post(f"{API}/runs", json={"configuration": CONFIG, "seed": -1}).status_code == 422
     assert client.post(f"{API}/runs", json={}).status_code == 422
+    overrides = client.post(f"{API}/runs", json={"configuration": CONFIG,
+                                                 "scenario_parameters": {"budget_usd": 10**9}})
+    assert overrides.status_code == 422  # stored runs always use the scenario's own values

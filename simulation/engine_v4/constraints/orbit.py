@@ -1,6 +1,6 @@
 """Orbit summary and instrument performance at the selected orbit.
 
-Orbit values are read from equipment_v4.json (all derived there: circular orbit,
+Orbit values are read from the equipment dataset (all derived there: circular orbit,
 spherical Earth). Orbital mechanics is not recomputed. Orbital lifetime is
 unknown in the dataset and is not calculated.
 """

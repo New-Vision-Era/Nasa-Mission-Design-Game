@@ -57,9 +57,9 @@ CREATE TABLE IF NOT EXISTS simulation_runs (   -- real-data engine (engine_v4); 
     feasibility              TEXT NOT NULL,   -- FEASIBLE or CONDITIONAL (INFEASIBLE cannot launch)
     outcome                  TEXT NOT NULL,
     score_total              REAL,
-    uses_parameter_overrides INTEGER NOT NULL DEFAULT 0,
+    uses_parameter_overrides INTEGER NOT NULL DEFAULT 0,   -- always 0: stored runs take no overrides
     configuration_json       TEXT NOT NULL,
-    scenario_parameters_json TEXT NOT NULL,
+    scenario_parameters_json TEXT NOT NULL,                -- always "{}"; kept so existing files still work
     result_json              TEXT NOT NULL,   -- the full engine result
     created_at               TEXT NOT NULL
 );

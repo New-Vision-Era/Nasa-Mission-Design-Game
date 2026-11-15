@@ -105,7 +105,7 @@ class ScenarioParams(BaseModel):
     count_subsystems_in_payload_mass: bool = True
     volume_scope: Literal["instruments", "all"] = "instruments"
     packing_factor: float = Field(0.6, gt=0, le=1)
-    bus_mass_kg_assumption: Optional[float] = Field(None, ge=0)
+    bus_mass_kg_assumption: Optional[float] = Field(None, ge=0)  # overrides the platform's bus_mass_kg; None = use the dataset
     rideshare_mass_cap_kg_assumption: Optional[float] = Field(None, ge=0)
 
     # player-built power (Mode B)

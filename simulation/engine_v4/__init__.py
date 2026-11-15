@@ -1,4 +1,4 @@
-"""MVP simulation engine on the equipment_v4 dataset."""
+"""MVP simulation engine on the researched equipment dataset (equipment_v5)."""
 from .configuration import ConfigError, MissionConfig, ScenarioParams
 from .data_loader import Catalog, CatalogError, load_catalog
 from .engine import ENGINE_VERSION, run_simulation

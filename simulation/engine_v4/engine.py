@@ -7,6 +7,7 @@ Independent of the frontend and of FastAPI. Deterministic for a given input and 
 """
 from __future__ import annotations
 
+import copy
 from typing import Any, Optional
 
 from .configuration import (MissionConfig, ScenarioParams, Selection, load_scenario, parse_config,
@@ -18,11 +19,17 @@ from .mission.performance import science_performance
 from .mission.scoring import compute_score
 from .results import FAIL, HARD, NOT_EVALUATED, WARNING
 
-ENGINE_VERSION = "engine_v4-mvp-0.1"
+ENGINE_VERSION = "engine_v4-mvp-0.2"
+
+# Caveat fields shown in the debrief when a record has them (platforms since equipment_v5).
+PROVENANCE_EXTRA_FIELDS = ("bus_mass_kg", "bus_mass_basis", "bus_mass_range_kg", "bus_mass_method",
+                           "bus_mass_sources", "bus_mass_note", "price_note", "ownership_note")
 
 LIMITATIONS = [
     "Simplified MVP model for a game, not a high-fidelity engineering simulation.",
-    "Total spacecraft launch mass cannot be computed from real data: platform bus mass is unknown.",
+    "Platform bus mass is not a manufacturer value: an estimate for GSAT-20 and GSAT-50, derived with an "
+    "inference for GSAT-200. It is dry, so propellant carried by the bus is not counted. Results that depend "
+    "on it (launch mass, rideshare price, delta-v) report its range.",
     "Whether GSAT platforms include their own power, radio and ADCS hardware is unknown; the power mode "
     "is an explicit modelling choice.",
     "Science performance uses transparent rules, not information gain: there is no measurement or noise model.",
@@ -132,7 +139,11 @@ def provenance(sel: Selection, catalog: Catalog) -> dict:
     """Sources and caveats of every selected component, for the debrief."""
     comps = {}
     for rec in sel.all_records():
-        comps[rec["id"]] = {"name": rec.get("name"), "source_urls": list(rec.get("source_urls") or []),
-                            "value_notes": rec.get("value_notes"),
-                            "price_type": rec.get("price_type"), "value_kind": rec.get("value_kind")}
+        entry = {"name": rec.get("name"), "source_urls": list(rec.get("source_urls") or []),
+                 "value_notes": rec.get("value_notes"),
+                 "price_type": rec.get("price_type"), "value_kind": rec.get("value_kind")}
+        for key in PROVENANCE_EXTRA_FIELDS:
+            if rec.get(key) is not None:
+                entry[key] = copy.deepcopy(rec[key])
+        comps[rec["id"]] = entry
     return {"dataset_id": catalog.dataset_id, "value_kinds": catalog.value_kinds, "components": comps}

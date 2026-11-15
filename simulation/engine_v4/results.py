@@ -16,7 +16,7 @@ FEASIBLE = "FEASIBLE"
 INFEASIBLE = "INFEASIBLE"
 CONDITIONAL = "CONDITIONAL"
 
-# value kinds, as defined in equipment_v4.json "value_kinds"
+# value kinds, as defined in the dataset's "value_kinds"
 PUBLISHED = "published"
 DERIVED = "derived"
 ESTIMATE = "estimate"

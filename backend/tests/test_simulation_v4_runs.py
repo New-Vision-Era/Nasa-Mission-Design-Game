@@ -1,6 +1,7 @@
 """Service-level tests for stored real-data runs. No web framework needed."""
 
 import pytest
+from pydantic import ValidationError
 
 from backend.app.errors import ApiError
 from backend.app.schemas import SimulationRunCreate
@@ -27,9 +28,9 @@ def test_launch_stores_the_full_result_and_it_reads_back_identically(container):
     ada = container.auth.register("ada", "correct horse").user
     run = sim.launch(ada, create(name="First try"))
     assert run["status"] == "completed" and run["name"] == "First try"
-    assert run["result"]["feasibility"]["status"] == "CONDITIONAL"
+    assert run["result"]["feasibility"]["status"] == "FEASIBLE"
     assert run["result"]["configuration"]["platform_id"] == "gsat_50"
-    assert run["uses_parameter_overrides"] is False
+    assert run["result"]["resources"]["bus_mass_kg"]["basis"] == "estimate"
     assert sim.get(ada, run["run_id"]) == run
     # stored result equals a fresh stateless run with the same seed
     assert run["result"] == sim.run({"configuration": CONFIG, "seed": 5})
@@ -52,20 +53,20 @@ def test_invalid_configuration_is_rejected_with_the_engine_error(container):
     assert exc.value.field == "platform_id"
 
 
-def test_history_is_private_newest_first_and_records_overrides(container):
+def test_history_is_private_and_newest_first(container):
     sim = container.simulation_v4
     ada = container.auth.register("ada", "correct horse").user
     bob = container.auth.register("bob", "correct horse").user
-    first = sim.launch(ada, create(name="plain"))
-    second = sim.launch(ada, create(name="assumed bus", scenario_parameters={"bus_mass_kg_assumption": 40}))
+    first = sim.launch(ada, create(name="SSO 500"))
+    second = sim.launch(ada, create(name="SSO 600", configuration={**CONFIG, "orbit_id": "sso_600"}))
     sim.launch(bob, create())
 
     rows = sim.history(ada)
     assert [r.run_id for r in rows] == [second["run_id"], first["run_id"]]
-    assert [r.feasibility for r in rows] == ["FEASIBLE", "CONDITIONAL"]
-    assert [r.uses_parameter_overrides for r in rows] == [True, False]
-    assert rows[0].outcome == "SUCCESS" and 0 <= rows[0].score_total <= 100
-    assert second["scenario_parameters"] == {"bus_mass_kg_assumption": 40}
+    assert [r.feasibility for r in rows] == ["CONDITIONAL", "FEASIBLE"]  # no SSO 600 capacity for Electron
+    assert [r.name for r in rows] == ["SSO 600", "SSO 500"]
+    assert rows[1].outcome == "SUCCESS" and 0 <= rows[1].score_total <= 100
+    assert rows[1].dataset_id == "equipment_v5"
     assert len(sim.history(bob)) == 1
     assert len(sim.history(ada, limit=1)) == 1
 
@@ -74,6 +75,13 @@ def test_history_is_private_newest_first_and_records_overrides(container):
     assert exc.value.status == 404
     with pytest.raises(ApiError):
         sim.get(None, first["run_id"])
+
+
+def test_stored_runs_refuse_scenario_overrides():
+    with pytest.raises(ValidationError):
+        SimulationRunCreate(configuration=CONFIG, scenario_parameters={"budget_usd": 10**9})
+    with pytest.raises(ValidationError):
+        SimulationRunCreate(configuration=CONFIG, seed=-1)
 
 
 def test_guest_run_is_readable_by_id_and_in_no_history(container):
