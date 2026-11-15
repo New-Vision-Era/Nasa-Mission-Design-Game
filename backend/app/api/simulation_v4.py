@@ -88,8 +88,8 @@ def mcas_evaluate(container: ContainerDep, body: dict[str, Any] = Body(...)) -> 
 
 
 @router.post("/missions", status_code=201)
-def mcas_start(body: dict[str, Any] = Body(...), user: OptionalUser = None,
-               container: ContainerDep = None) -> dict[str, Any]:
+def mcas_start(user: OptionalUser, container: ContainerDep,
+               body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Start a step-by-step MCAS mission and persist its JSON state."""
     return container.simulation_v4.start_mcas(user, body)
 
@@ -108,8 +108,8 @@ def mcas_get(mission_id: str, user: OptionalUser, container: ContainerDep) -> di
 
 
 @router.post("/missions/{mission_id}/decisions")
-def mcas_decide(mission_id: str, body: dict[str, Any] = Body(...), user: OptionalUser = None,
-                container: ContainerDep = None) -> dict[str, Any]:
+def mcas_decide(mission_id: str, user: OptionalUser, container: ContainerDep,
+                body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Apply the player's response and advance to the next decision or mission completion."""
     return container.simulation_v4.decide_mcas(user, mission_id, body)
 
