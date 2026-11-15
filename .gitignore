@@ -1,14 +1,80 @@
-__pycache__/
-*.pyc
-.pytest_cache/
-.myenv/
-venv/
-*.db
-*.db-journal
-.env
+# ==========================================
+# Dependencies
+# ==========================================
 node_modules/
-dist/
-
-# Local Python environments
+venv/
 .venv/
-myenv/
+env/
+__pycache__/
+*.py[cod]
+
+# ==========================================
+# Environment variables and secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials.json
+
+# ==========================================
+# Build outputs
+# ==========================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+coverage/
+
+# ==========================================
+# Python cache and test files
+# ==========================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+*.egg-info/
+htmlcov/
+
+# ==========================================
+# IDE and editor files
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Logs and temporary files
+# ==========================================
+*.log
+logs/
+tmp/
+temp/
+
+# ==========================================
+# Local databases
+# ==========================================
+*.sqlite
+*.sqlite3
+*.db
+
+# ==========================================
+# Deployment and local configuration
+# ==========================================
+.vercel/
+.netlify/
+.turbo/
+
+# ==========================================
+# Optional local files
+# ==========================================
+*.bak
+*.orig
+*.tmp
