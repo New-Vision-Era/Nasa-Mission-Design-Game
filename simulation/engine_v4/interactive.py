@@ -222,8 +222,8 @@ def build_debrief(mission: Union[str, dict], catalog: Optional[Catalog] = None) 
         "operational_availability": {
             "science_fraction": round(prog.science_done / periods, 4) if periods else None,
             "included_in_score": False,
-            "note": "Reported for information. It is not a reliability factor in the score; adding it needs "
-                    "team approval.",
+            "note": "Reported for information only. Under the accepted scoring decision, it is not "
+                    "a reliability factor and does not change the score.",
         },
         "risk_assessment": risk,
         "anomalies": records,
