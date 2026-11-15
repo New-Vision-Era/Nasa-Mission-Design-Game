@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engine v4 test bench</title>
+<style>
+:root{--bg:#f6f7f9;--panel:#fff;--ink:#16202b;--mute:#5b6875;--line:#dde2e8;--accent:#1f5fbf;
+--pass:#1a7f4b;--fail:#c0322b;--warn:#b26a00;--unk:#6b6f76;--passbg:#e3f4ea;--failbg:#fbe6e4;--warnbg:#fdf0d9;--unkbg:#eceef1}
+@media(prefers-color-scheme:dark){:root{--bg:#10151b;--panel:#182029;--ink:#e6ebf0;--mute:#9aa7b4;--line:#2a3541;--accent:#6aa5ff;
+--pass:#5fd39a;--fail:#ff8a80;--warn:#f2b866;--unk:#a9b0b8;--passbg:#153526;--failbg:#40201d;--warnbg:#3d2d10;--unkbg:#262d35}}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+header h1{font-size:16px;margin:0}
+header span{color:var(--mute);font-size:12px}
+main{display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:14px;padding:14px;align-items:start}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px}
+h2{font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}
+label{display:block;font-size:12px;color:var(--mute);margin:8px 0 3px}
+select,input[type=number],input[type=text],textarea{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;min-height:70px;resize:vertical}
+.checks{max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:6px;padding:4px 8px;background:var(--bg)}
+.checks label{display:flex;gap:6px;align-items:flex-start;margin:3px 0;color:var(--ink);font-size:12.5px}
+.checks small{color:var(--mute)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{font:inherit;padding:7px 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button:disabled{opacity:.5;cursor:wait}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{font-size:12px;padding:4px 8px}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;bottom:0;background:var(--panel);padding-top:8px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.PASS,.FEASIBLE,.SUCCESS{color:var(--pass);background:var(--passbg)}
+.FAIL,.INFEASIBLE,.FAILURE{color:var(--fail);background:var(--failbg)}
+.WARNING,.CONDITIONAL,.PARTIAL_SUCCESS{color:var(--warn);background:var(--warnbg)}
+.NOT_EVALUATED{color:var(--unk);background:var(--unkbg)}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:10px}
+.tile b{display:block;font-size:20px;margin-top:4px}
+.tile span{font-size:12px;color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.03em}
+td.num{white-space:nowrap;font-variant-numeric:tabular-nums}
+.sev{font-size:11px;color:var(--mute);text-transform:uppercase}
+details{margin-top:4px}summary{cursor:pointer;color:var(--mute);font-size:12px}
+.bar{height:8px;border-radius:4px;background:var(--unkbg);overflow:hidden;margin:4px 0}
+.bar i{display:block;height:100%;background:var(--accent)}
+ul{margin:4px 0 0;padding-left:18px}li{margin:2px 0}
+.err{color:var(--fail);background:var(--failbg);padding:8px 10px;border-radius:6px;white-space:pre-wrap}
+.mute{color:var(--mute)}pre{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;overflow:auto;max-height:420px;background:var(--bg);padding:8px;border-radius:6px}
+.alt{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.alt h3{margin:0 0 4px;font-size:13px}
+.kind{font-size:11px;color:var(--mute)}
+</style>
+</head>
+<body>
+<header><h1>Engine v4 test bench</h1><span id="meta">loading catalog…</span>
+<span>Development tool. Simplified game model; scenario values are gameplay assumptions.</span></header>
+<main>
+<div>
+  <section><h2>Presets</h2><div class="presets" id="presets"></div></section>
+  <section><h2>Design</h2>
+    <label>Scenario</label><select id="scenario"></select>
+    <label>Platform</label><select id="platform"></select>
+    <label>Instruments</label><div class="checks" id="instruments"></div>
+    <label>ADCS</label><select id="adcs"></select>
+    <label>Communication systems</label><div class="checks" id="comms"></div>
+    <label>Propulsion</label><select id="propulsion"></select>
+    <div class="row"><div><label>Orbit</label><select id="orbit"></select></div>
+    <div><label>Launch vehicle</label><select id="launcher"></select></div></div>
+    <label>Power mode</label><select id="powermode">
+      <option value="platform_payload_budget">A: platform payload budget</option>
+      <option value="player_built_power_system">B: player-built power system</option></select>
+    <label>Solar arrays (quantity)</label><div class="checks" id="arrays"></div>
+    <label>Batteries (quantity)</label><div class="checks" id="batteries"></div>
+    <label>Power conditioning (EPS)</label><select id="eps"></select>
+  </section>
+  <section><h2>Scenario overrides (gameplay assumptions)</h2>
+    <div class="row">
+      <div><label>Bus mass assumption, kg</label><input type="number" id="p_bus" min="0" step="1" placeholder="null = unknown"></div>
+      <div><label>Budget, USD</label><input type="number" id="p_budget" min="0" step="100000"></div>
+      <div><label>Passes per day</label><input type="number" id="p_passes" min="0" step="1"></div>
+      <div><label>Instrument duty cycle</label><input type="number" id="p_duty" min="0" max="1" step="0.05"></div>
+      <div><label>Data rate for selected instruments, kbps</label><input type="number" id="p_rate" min="0" step="100" placeholder="empty = not invented"></div>
+      <div><label>Seed</label><input type="number" id="seed" step="1" value="42"></div>
+    </div>
+    <label>Ground stations</label>
+    <div class="checks" id="stations" style="display:flex;gap:14px;max-height:none"></div>
+    <label style="display:flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="p_events" checked> Operational events enabled</label>
+    <label>More overrides (JSON, merged last)</label>
+    <textarea id="p_json" spellcheck="false" placeholder='{"hard_pointing_requirement_deg": 0.2}'></textarea>
+    <div class="actions">
+      <button class="primary" id="run">Run simulation</button>
+      <button id="recommend">Recommend alternatives</button>
+      <label style="display:flex;gap:6px;align-items:center;margin:0;color:var(--ink)"><input type="checkbox" id="auto" checked> Auto-run</label>
+    </div>
+  </section>
+</div>
+<div id="out"><section><span class="mute">Pick a preset or change the design. Results appear here.</span></section></div>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (v, d = 2) => v === null || v === undefined ? "unknown" :
+  (typeof v === "number" ? (Math.abs(v) >= 1e6 ? v.toLocaleString("en-US", {maximumFractionDigits: 0}) : +v.toFixed(d) + "") : String(v));
+const badge = s => `<span class="badge ${esc(s)}">${esc(String(s).replace(/_/g, " "))}</span>`;
+// Standalone dev server: "/api". Served by the backend at .../simulation/testbench: ".../simulation".
+const API = window.ENGINE_V4_API_BASE || (/\/simulation\/testbench\/?$/.test(location.pathname)
+  ? location.pathname.replace(/\/testbench\/?$/, "") : "/api");
+let CAT = null, SCEN = [], timer = null, busy = false;
+
+const PRESETS = [
+  {name: "Real data only", note: "CONDITIONAL: bus mass unknown", cfg: {}, params: {}},
+  {name: "With bus mass + data rate", note: "FEASIBLE, partial data return", cfg: {}, params: {bus: 40, rate: 20000}},
+  {name: "Too heavy", note: "DragonEye on GSAT-50", cfg: {instrument_ids: ["dragoneye"]}, params: {bus: 40}},
+  {name: "Does not fit", note: "Chameleon on GSAT-20", cfg: {platform_id: "gsat_20", instrument_ids: ["chameleon"]}, params: {bus: 40}},
+  {name: "Not commandable", note: "transmit-only radio", cfg: {communication_system_ids: ["endurosat_x_band_transmitter"]}, params: {bus: 40}},
+  {name: "Wrong launcher orbit", note: "Vega C to SSO 500", cfg: {launch_vehicle_id: "vega_c"}, params: {bus: 40}},
+  {name: "Unknown mass", note: "TROPICS TMS", cfg: {instrument_ids: ["hyperscape100", "tropics_tms"]}, params: {bus: 40}},
+  {name: "Player-built power", note: "Mode B, sufficient", cfg: {power: {mode: "player_built_power_system",
+    solar_array_ids: ["dcubed_origami_100w"], battery_ids: ["space_inventor_bat28_p4"], eps_id: "endurosat_eps_i"}}, params: {bus: 40}},
+  {name: "Power B: battery too small", note: "eclipse energy fails", cfg: {power: {mode: "player_built_power_system",
+    solar_array_ids: ["dcubed_origami_100w"], battery_ids: ["exa_1u_battery_22wh"], eps_id: null}}, params: {bus: 40}},
+  {name: "Wrong instrument", note: "RGB only: objective fails", cfg: {instrument_ids: ["gecko"]}, params: {bus: 40}},
+  {name: "Coarse pointing", note: "1 deg ADCS warning", cfg: {adcs_system_id: "cubespace_cubeadcs_3axis_small"}, params: {bus: 40}},
+  {name: "Optical downlink", note: "needs optical station", cfg: {communication_system_ids: ["endurosat_s_band_transceiver", "cubecat"]},
+    params: {bus: 40, stations: ["uhf", "s_band", "x_band", "optical"], rate: 20000}},
+];
+const BASE = {platform_id: "gsat_50", instrument_ids: ["hyperscape100"], power: {mode: "platform_payload_budget", solar_array_ids: [], battery_ids: [], eps_id: null},
+  communication_system_ids: ["endurosat_s_band_transceiver", "endurosat_x_band_transmitter"], adcs_system_id: "cubespace_cubeadcs_3axis_small_star",
+  propulsion_system_id: null, orbit_id: "sso_500", launch_vehicle_id: "rocket_lab_electron"};
+
+function opt(sel, items, label, none) {
+  sel.innerHTML = (none ? `<option value="">${esc(none)}</option>` : "") +
+    items.map(r => `<option value="${esc(r.id)}">${esc(label(r))}</option>`).join("");
+}
+function checks(box, items, label, name, qty) {
+  box.innerHTML = items.map(r => `<label><input type="${qty ? "number" : "checkbox"}" ${qty ? 'min="0" max="9" value="0" style="width:44px"' : ""} data-g="${name}" value="${qty ? 0 : esc(r.id)}" data-id="${esc(r.id)}">
+    <span>${esc(r.name || r.id)} <small>${esc(label(r))}</small></span></label>`).join("");
+}
+const kg = r => r.mass_kg == null ? "mass unknown" : r.mass_kg + " kg";
+
+function build() {
+  const c = CAT.categories;
+  opt($("scenario"), SCEN, s => s.name);
+  opt($("platform"), c.platforms, r => `${r.name}: ${r.payload_mass_capacity_kg} kg, ${r.payload_average_power_w} W, ${(r.price_usd / 1e6)} M USD`);
+  checks($("instruments"), c.instruments, r => `${r.family}, ${kg(r)}, GSD ${r.gsd_m ?? "?"} m, swath ${r.swath_km ?? "?"} km`, "inst");
+  opt($("adcs"), c.adcs_systems, r => `${r.name}: ${r.pointing_accuracy_deg} deg (${r.pointing_metric}), ${kg(r)}`);
+  checks($("comms"), c.communication_systems, r => `${r.family}, ${r.downlink_kbps} kbps down, commands: ${r.can_receive_commands === null ? "unknown" : r.can_receive_commands ? "yes" : "no"}, ${kg(r)}`, "comm");
+  opt($("propulsion"), c.propulsion_systems, r => `${r.name}: ${r.family}, ${r.total_impulse_ns} Ns, wet ${r.wet_mass_kg ?? "?"} kg`, "None");
+  opt($("orbit"), c.orbits, r => `${r.name}`);
+  opt($("launcher"), c.launch_vehicles, r => `${r.name}: ${r.price_usd == null ? "price unpublished" : (r.price_usd / 1e6) + " M USD"}`);
+  const pw = c.power_systems;
+  checks($("arrays"), pw.filter(r => r.family === "solar_array"), r => `${r.peak_power_w} W peak, ${kg(r)}`, "array", true);
+  checks($("batteries"), pw.filter(r => r.family === "battery"), r => `${r.energy_wh} Wh, ${kg(r)}`, "batt", true);
+  opt($("eps"), pw.filter(r => r.family === "power_conditioning"), r => `${r.name}: max ${r.max_output_w} W`, "None");
+  $("stations").innerHTML = ["uhf", "s_band", "x_band", "optical"].map(s =>
+    `<label><input type="checkbox" data-g="gs" value="${s}"> ${s}</label>`).join("");
+  $("presets").innerHTML = PRESETS.map((p, i) => `<button data-i="${i}" title="${esc(p.note)}">${esc(p.name)}</button>`).join("");
+  $("meta").textContent = `${CAT.dataset_id}: ` + Object.entries(c).map(([k, v]) => `${v.length} ${k.replace(/_/g, " ")}`).join(", ");
+}
+
+function setChecks(group, ids) { document.querySelectorAll(`[data-g=${group}]`).forEach(el => el.checked = ids.includes(el.value)); }
+function setQty(group, ids) { document.querySelectorAll(`[data-g=${group}]`).forEach(el => el.value = ids.filter(i => i === el.dataset.id).length); }
+const getChecks = g => [...document.querySelectorAll(`[data-g=${g}]:checked`)].map(el => el.value);
+const getQty = g => [...document.querySelectorAll(`[data-g=${g}]`)].flatMap(el => Array(Math.max(0, Math.min(9, +el.value || 0))).fill(el.dataset.id));
+
+function applyConfig(cfg) {
+  $("platform").value = cfg.platform_id; $("adcs").value = cfg.adcs_system_id;
+  $("propulsion").value = cfg.propulsion_system_id || ""; $("orbit").value = cfg.orbit_id; $("launcher").value = cfg.launch_vehicle_id;
+  setChecks("inst", cfg.instrument_ids || []); setChecks("comm", cfg.communication_system_ids || []);
+  const p = cfg.power || {};
+  $("powermode").value = p.mode || "platform_payload_budget";
+  setQty("array", p.solar_array_ids || []); setQty("batt", p.battery_ids || []); $("eps").value = p.eps_id || "";
+}
+function applyScenarioDefaults(over = {}) {
+  const s = SCEN.find(x => x.id === $("scenario").value) || SCEN[0], d = s ? s.parameters : {};
+  $("p_bus").value = over.bus ?? (d.bus_mass_kg_assumption ?? "");
+  $("p_budget").value = d.budget_usd ?? ""; $("p_passes").value = d.passes_per_day ?? "";
+  $("p_duty").value = d.instrument_duty_cycle ?? ""; $("p_rate").value = over.rate ?? "";
+  $("p_events").checked = d.events ? d.events.enabled !== false : true;
+  setChecks("gs", over.stations || d.ground_station_types || []); $("p_json").value = "";
+}
+function readConfig() {
+  return {scenario_id: $("scenario").value, platform_id: $("platform").value, instrument_ids: getChecks("inst"),
+    power: {mode: $("powermode").value, solar_array_ids: getQty("array"), battery_ids: getQty("batt"), eps_id: $("eps").value || null},
+    communication_system_ids: getChecks("comm"), adcs_system_id: $("adcs").value, propulsion_system_id: $("propulsion").value || null,
+    orbit_id: $("orbit").value, launch_vehicle_id: $("launcher").value};
+}
+function readParams(cfg) {
+  const num = id => $(id).value === "" ? null : +$(id).value, p = {};
+  p.bus_mass_kg_assumption = num("p_bus");
+  if (num("p_budget") !== null) p.budget_usd = num("p_budget");
+  if (num("p_passes") !== null) p.passes_per_day = num("p_passes");
+  if (num("p_duty") !== null) p.instrument_duty_cycle = num("p_duty");
+  if (num("p_rate") !== null) p.data_generation_kbps = Object.fromEntries(cfg.instrument_ids.map(i => [i, num("p_rate")]));
+  p.ground_station_types = getChecks("gs");
+  p.events = {enabled: $("p_events").checked};
+  const extra = $("p_json").value.trim();
+  if (extra) Object.assign(p, JSON.parse(extra));
+  return p;
+}
+async function post(path, body) {
+  const r = await fetch(API + path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  return {status: r.status, data: await r.json()};
+}
+function body() {
+  const configuration = readConfig();
+  return {configuration, scenario_parameters: readParams(configuration), seed: parseInt($("seed").value || "0", 10) || 0};
+}
+function showError(e) {
+  const d = e && e.error ? e.error : {message: String(e)};
+  const more = (d.details || []).map(x => `${x.field || ""}: ${x.message}`).join("\n");
+  $("out").innerHTML = `<section><h2>Request rejected</h2><div class="err"><b>${esc(d.code || "error")}</b>${d.field ? " at " + esc(d.field) : ""}\n${esc(d.message)}${more ? "\n\n" + esc(more) : ""}</div></section>`;
+}
+async function run() {
+  if (busy) return; let b;
+  try { b = body(); } catch (e) { return showError({error: {code: "invalid_json", message: "The JSON overrides box is not valid JSON: " + e.message}}); }
+  busy = true; $("run").disabled = true;
+  try { const {status, data} = await post("/run", b); status === 200 ? render(data) : showError(data); }
+  catch (e) { showError(e); } finally { busy = false; $("run").disabled = false; }
+}
+async function recommend() {
+  let b; try { b = body(); } catch (e) { return showError({error: {message: e.message}}); }
+  $("recommend").disabled = true; $("recommend").textContent = "Searching…";
+  try { const {status, data} = await post("/recommend", b); status === 200 ? renderAlternatives(data) : showError(data); }
+  catch (e) { showError(e); } finally { $("recommend").disabled = false; $("recommend").textContent = "Recommend alternatives"; }
+}
+
+function render(r) {
+  const s = r.score, m = r.mission, res = r.resources;
+  const row = c => `<tr><td>${badge(c.status)}<div class="sev">${esc(c.severity)}</div></td>
+    <td><b>${esc(c.title)}</b><div>${esc(c.message)}</div>
+    <details><summary>${esc(c.value_kind)} · ${c.assumptions.length} assumption(s) · ${c.source_urls.length} source(s)</summary>
+    <ul>${c.assumptions.map(a => `<li>${esc(a)}</li>`).join("")}${c.source_urls.map(u => `<li class="mute">${esc(u)}</li>`).join("")}</ul></details></td>
+    <td class="num">${c.actual_value == null ? "" : fmt(c.actual_value)}${c.limit_value == null ? "" : " / " + fmt(c.limit_value)} ${c.actual_value == null && c.limit_value == null ? "" : esc(c.unit || "")}</td></tr>`;
+  const cat = c => `<div style="margin-bottom:10px"><b>${esc(c.title)}</b> <span class="mute">${c.evaluable ? fmt(c.points, 1) + " / " + c.weight : "not evaluated (weight " + c.weight + ")"}</span>
+    <div class="bar"><i style="width:${c.evaluable ? c.score_fraction * 100 : 0}%"></i></div>
+    <details><summary>Why</summary><ul>${c.reasons.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details></div>`;
+  const events = m.events.filter(e => e.effect.applies);
+  const resRows = Object.entries(res).map(([k, v]) => `<tr><td>${esc(k)}</td><td class="num">${fmt(v.value)} ${esc(v.unit || "")}</td>
+    <td class="mute">${esc(v.value_kind || "")}${v.unknown_component_ids && v.unknown_component_ids.length ? " · unknown: " + esc(v.unknown_component_ids.join(", ")) : ""}${v.note ? " · " + esc(v.note) : ""}</td></tr>`).join("");
+  const inst = r.instruments_at_orbit.map(i => `<tr><td>${esc(i.id)}</td><td class="num">${fmt(i.gsd_m_at_orbit)} m</td><td class="num">${fmt(i.swath_km_at_orbit)} km</td>
+    <td class="num">${fmt(i.coverage_rate_km2_s)} km²/s</td><td class="mute">${i.scaled_with_altitude ? "scaled (derived)" : "reference value, not scaled"}</td></tr>`).join("");
+  $("out").innerHTML = `
+  <section><div class="summary">
+    <div class="tile"><span>Feasibility</span><b>${badge(r.feasibility.status)}</b></div>
+    <div class="tile"><span>Mission outcome</span><b>${badge(m.outcome)}</b></div>
+    <div class="tile"><span>Score</span><b>${s.total == null ? "n/a" : fmt(s.total, 1)} <span>/ 100</span></b></div>
+    <div class="tile"><span>Score completeness</span><b>${fmt(s.completeness * 100, 0)}%</b></div>
+    <div class="tile"><span>Mass margin</span><b>${r.margins.mass_margin_fraction == null ? "unknown" : fmt(r.margins.mass_margin_fraction * 100, 0) + "%"}</b></div>
+    <div class="tile"><span>Power margin</span><b>${r.margins.power_margin_fraction == null ? "unknown" : fmt(r.margins.power_margin_fraction * 100, 0) + "%"}</b></div>
+  </div>
+  ${r.feasibility.hard_failed.length ? `<p><b>Hard failures:</b> ${esc(r.feasibility.hard_failed.join(", "))}</p>` : ""}
+  ${r.feasibility.hard_not_evaluated.length ? `<p><b>Hard constraints not evaluated:</b> ${esc(r.feasibility.hard_not_evaluated.join(", "))}</p>` : ""}
+  ${s.notes.slice(2).map(n => `<p class="mute">${esc(n)}</p>`).join("")}</section>
+  <section><h2>Constraints</h2><table><thead><tr><th>Status</th><th>Check</th><th>Value / limit</th></tr></thead><tbody>${r.constraints.map(row).join("")}</tbody></table></section>
+  <section><h2>Score breakdown</h2>${s.categories.map(cat).join("")}</section>
+  <section><h2>Mission</h2><table><tbody>${m.stages.map(st => `<tr><td><b>${esc(st.title)}</b><div class="sev">${esc(st.status)}</div></td><td>${esc(st.message)}</td></tr>`).join("")}</tbody></table>
+    ${m.objectives.map(o => `<p><b>${esc(o.title)}:</b> ${o.achieved_fraction == null ? "not evaluated" : fmt(o.achieved_fraction * 100, 0) + "%"} <span class="mute">${esc(o.message)}</span></p>`).join("")}
+    <h2 style="margin-top:12px">Events that affected the mission (seed ${r.seed})</h2>
+    ${events.length ? `<ul>${events.map(e => `<li>Period ${e.period}: <b>${esc(e.title)}</b>. ${esc(e.explanation)}</li>`).join("")}</ul>` : `<span class="mute">None (${m.events.length} drawn, none applied to this design).</span>`}</section>
+  <section><h2>Debrief</h2><ul>${r.explanations.map(e => `<li><span class="kind">${esc(e.kind)}${e.related_step ? " · " + esc(e.related_step) : ""}</span><br>${esc(e.message)}</li>`).join("")}</ul></section>
+  <section><h2>Resources</h2><table><tbody>${resRows}</tbody></table></section>
+  <section><h2>Orbit and instruments</h2><p>${esc(r.orbit.name)}: period ${fmt(r.orbit.period_min)} min, ${fmt(r.orbit.orbits_per_day)} orbits/day, ground speed ${fmt(r.orbit.ground_track_speed_km_s, 3)} km/s,
+    max eclipse ${fmt(r.orbit.max_eclipse_min)} min, max pass ${fmt(r.orbit.max_pass_duration_min_10deg)} min, resolution scale ${fmt(r.orbit.resolution_scale_vs_500km)}. <span class="mute">All derived. Lifetime not modelled.</span></p>
+    ${inst ? `<table><thead><tr><th>Instrument</th><th>GSD</th><th>Swath</th><th>Coverage</th><th></th></tr></thead><tbody>${inst}</tbody></table>` : ""}</section>
+  <section><details><summary>Assumptions (${r.assumptions.length}) and limitations</summary>
+    <ul>${r.limitations.map(l => `<li>${esc(l)}</li>`).join("")}</ul><pre>${esc(JSON.stringify(Object.fromEntries(r.assumptions.map(a => [a.id, a.value])), null, 1))}</pre></details>
+    <details><summary>Request body</summary><pre>${esc(JSON.stringify(body(), null, 1))}</pre></details>
+    <details><summary>Full JSON response</summary><pre>${esc(JSON.stringify(r, null, 1))}</pre></details></section>`;
+}
+function renderAlternatives(d) {
+  window._alts = d.alternatives;
+  const o = a => Object.entries(a.objectives).map(([k, v]) => `${k.replace(/_/g, " ")}: ${v == null ? "unknown" : k === "known_cost_usd" ? fmt(v) + " USD" : fmt(v * 100, 0) + "%"}`).join(" · ");
+  const c = a => { const x = a.configuration; return [x.platform_id, x.instrument_ids.join("+"), x.adcs_system_id, x.communication_system_ids.join("+"), x.orbit_id, x.launch_vehicle_id].join(" · "); };
+  $("out").innerHTML = `<section><h2>Recommended alternatives</h2>
+    <p class="mute">${esc(d.method)}. ${d.candidates_generated} candidates, ${d.candidates_not_infeasible} not infeasible, ${d.pareto_front_size} on the Pareto front.</p>
+    ${d.alternatives.map((a, i) => `<div class="alt"><h3>${esc(a.label)} ${badge(a.feasibility)}</h3><div>${esc(c(a))}</div><div class="mute">${esc(o(a))}</div>
+      <button data-alt="${i}" style="margin-top:6px">Load and run</button></div>`).join("") || "<span class='mute'>No alternative found.</span>"}
+    <ul>${d.notes.map(n => `<li class="mute">${esc(n)}</li>`).join("")}</ul></section>`;
+}
+function schedule() { if (!$("auto").checked) return; clearTimeout(timer); timer = setTimeout(run, 250); }
+
+async function init() {
+  try {
+    const [cat, sc] = await Promise.all([fetch(API + "/catalog").then(r => r.json()), fetch(API + "/scenarios").then(r => r.json())]);
+    if (cat.error) throw cat;
+    CAT = cat; SCEN = sc.scenarios; build(); applyConfig(BASE); applyScenarioDefaults(); run();
+  } catch (e) { showError(e); $("meta").textContent = "catalog failed to load"; }
+}
+document.addEventListener("change", e => { if (e.target.id === "scenario") applyScenarioDefaults(); if (e.target.closest("main > div:first-child")) schedule(); });
+document.addEventListener("input", e => { if (e.target.matches("input[type=number],textarea")) schedule(); });
+$("run").addEventListener("click", run); $("recommend").addEventListener("click", recommend);
+$("presets").addEventListener("click", e => { const i = e.target.dataset.i; if (i === undefined) return; const p = PRESETS[i];
+  applyConfig({...BASE, ...p.cfg}); applyScenarioDefaults(p.params); run(); });
+$("out").addEventListener("click", e => { const i = e.target.dataset.alt; if (i === undefined) return; applyConfig(window._alts[i].configuration); run(); });
+init();
+</script>
+</body>
+</html>

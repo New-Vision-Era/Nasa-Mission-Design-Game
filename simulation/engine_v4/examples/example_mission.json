@@ -1,0 +1,14 @@
+{
+  "configuration": {
+    "scenario_id": "earth_observation_v4",
+    "platform_id": "gsat_50",
+    "instrument_ids": ["hyperscape100"],
+    "power": {"mode": "platform_payload_budget"},
+    "communication_system_ids": ["endurosat_s_band_transceiver", "endurosat_x_band_transmitter"],
+    "adcs_system_id": "cubespace_cubeadcs_3axis_small_star",
+    "propulsion_system_id": null,
+    "orbit_id": "sso_500",
+    "launch_vehicle_id": "rocket_lab_electron"
+  },
+  "seed": 42
+}
