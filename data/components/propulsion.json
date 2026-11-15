@@ -1,0 +1,48 @@
+[
+  {
+    "id": "cold_gas",
+    "category": "propulsion",
+    "name": "Cold-gas thrusters",
+    "summary": "Simple, light, limited capability.",
+    "mass_kg": 15,
+    "power_w": 5,
+    "cost_usd": 1500000,
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  },
+  {
+    "id": "chemical_thruster",
+    "category": "propulsion",
+    "name": "Chemical thruster",
+    "summary": "More capable, heavier.",
+    "mass_kg": 60,
+    "power_w": 15,
+    "cost_usd": 5000000,
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  }
+]

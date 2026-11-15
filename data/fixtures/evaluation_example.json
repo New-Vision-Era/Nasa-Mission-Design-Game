@@ -1,0 +1,108 @@
+{
+  "catalog_version": "0.1.0-mock",
+  "complete": true,
+  "launchable": true,
+  "missing": [],
+  "resources": {
+    "total_mass_kg": 255.0,
+    "power_required_w": 265.0,
+    "power_available_w": 300.0,
+    "data_generated_gb_per_day": 20.0,
+    "downlink_capacity_gb_per_day": 80.0,
+    "cost_usd": 43500000.0,
+    "budget_usd": 80000000.0,
+    "launch_capacity_kg": 300.0,
+    "mass_margin_fraction": 0.15,
+    "power_margin_fraction": 0.1167
+  },
+  "constraints": [
+    {
+      "id": "launch_mass",
+      "severity": "hard",
+      "status": "passed",
+      "value": 255.0,
+      "limit": 300.0,
+      "unit": "kg",
+      "margin_fraction": 0.15,
+      "related_step": "launch_vehicle",
+      "message": "Spacecraft mass is within the launch vehicle's capacity."
+    },
+    {
+      "id": "power_balance",
+      "severity": "hard",
+      "status": "passed",
+      "value": 265.0,
+      "limit": 300.0,
+      "unit": "W",
+      "margin_fraction": 0.1167,
+      "related_step": "power",
+      "message": "The power system supplies enough power for every selected component."
+    },
+    {
+      "id": "budget",
+      "severity": "hard",
+      "status": "passed",
+      "value": 43500000.0,
+      "limit": 80000000.0,
+      "unit": "USD",
+      "margin_fraction": 0.4562,
+      "related_step": "budget",
+      "message": "The design is within the mission budget."
+    },
+    {
+      "id": "objective_coverage",
+      "severity": "hard",
+      "status": "passed",
+      "value": null,
+      "limit": null,
+      "unit": null,
+      "margin_fraction": null,
+      "related_step": "instruments",
+      "message": "Every mission objective has an instrument that serves it."
+    },
+    {
+      "id": "downlink_capacity",
+      "severity": "soft",
+      "status": "passed",
+      "value": 20.0,
+      "limit": 80.0,
+      "unit": "GB/day",
+      "margin_fraction": 0.75,
+      "related_step": "communications",
+      "message": "The antenna can send home all the data the instruments produce."
+    },
+    {
+      "id": "mass_margin",
+      "severity": "soft",
+      "status": "passed",
+      "value": 0.15,
+      "limit": 0.1,
+      "unit": "fraction",
+      "margin_fraction": 0.15,
+      "related_step": "launch_vehicle",
+      "message": "Healthy mass margin."
+    },
+    {
+      "id": "power_margin",
+      "severity": "soft",
+      "status": "passed",
+      "value": 0.1167,
+      "limit": 0.1,
+      "unit": "fraction",
+      "margin_fraction": 0.1167,
+      "related_step": "power",
+      "message": "Healthy power margin."
+    },
+    {
+      "id": "orbit_suitability",
+      "severity": "soft",
+      "status": "passed",
+      "value": null,
+      "limit": null,
+      "unit": null,
+      "margin_fraction": null,
+      "related_step": "orbit",
+      "message": "The orbit suits the mission objectives."
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "catalog_version": "0.1.0-mock",
+  "data_status": "mock",
+  "note": "All numbers in this catalog are placeholder gameplay values written to exercise the code. They are NOT real spacecraft data. Person 1 replaces them with sourced values and then sets data_status to 'reviewed'."
+}

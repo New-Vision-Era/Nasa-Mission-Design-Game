@@ -1,0 +1,54 @@
+[
+  {
+    "id": "small_platform",
+    "category": "platform",
+    "name": "Small platform",
+    "summary": "Compact bus for light payloads.",
+    "mass_kg": 150,
+    "power_w": 60,
+    "cost_usd": 12000000,
+    "visual": {
+      "model": "bus_small"
+    },
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  },
+  {
+    "id": "medium_platform",
+    "category": "platform",
+    "name": "Medium platform",
+    "summary": "Larger bus with more structure and housekeeping load.",
+    "mass_kg": 350,
+    "power_w": 120,
+    "cost_usd": 25000000,
+    "visual": {
+      "model": "bus_medium"
+    },
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  }
+]

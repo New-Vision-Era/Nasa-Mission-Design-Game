@@ -1,0 +1,58 @@
+[
+  {
+    "id": "s_band_antenna",
+    "category": "communication",
+    "name": "S-band antenna",
+    "summary": "Simple low-rate link.",
+    "mass_kg": 6,
+    "power_w": 30,
+    "cost_usd": 2000000,
+    "downlink_gb_per_day": 15,
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "downlink_gb_per_day": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  },
+  {
+    "id": "x_band_high_gain",
+    "category": "communication",
+    "name": "X-band high-gain antenna",
+    "summary": "High-rate link; needs more power.",
+    "mass_kg": 18,
+    "power_w": 75,
+    "cost_usd": 6000000,
+    "downlink_gb_per_day": 80,
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "downlink_gb_per_day": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  }
+]

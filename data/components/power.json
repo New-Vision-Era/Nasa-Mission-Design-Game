@@ -1,0 +1,48 @@
+[
+  {
+    "id": "solar_array_small",
+    "category": "power",
+    "name": "Small solar array",
+    "summary": "Light array for low-power designs.",
+    "mass_kg": 20,
+    "power_output_w": 300,
+    "cost_usd": 3000000,
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_output_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  },
+  {
+    "id": "solar_array_medium",
+    "category": "power",
+    "name": "Medium solar array",
+    "summary": "More power, more mass and cost.",
+    "mass_kg": 55,
+    "power_output_w": 800,
+    "cost_usd": 7000000,
+    "provenance": {
+      "mass_kg": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "power_output_w": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      },
+      "cost_usd": {
+        "kind": "gameplay",
+        "note": "Mock placeholder value"
+      }
+    }
+  }
+]

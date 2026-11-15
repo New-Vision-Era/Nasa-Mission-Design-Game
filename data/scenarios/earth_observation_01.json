@@ -1,0 +1,27 @@
+{
+  "id": "earth_observation_01",
+  "name": "Earth Watch",
+  "briefing": "MOCK BRIEFING. Design a satellite that images the Earth's surface for one year and sends the pictures home.",
+  "objectives": [
+    {
+      "id": "surface_imaging",
+      "name": "Surface imaging",
+      "description": "Return enough image data to map the target regions.",
+      "target_data_gb": 6000
+    }
+  ],
+  "budget_usd": 80000000,
+  "mission_duration_days": 365,
+  "operations_steps": 5,
+  "requirements": [
+    "Stay within the mission budget.",
+    "Carry at least one instrument that can image the surface.",
+    "Fit on the chosen launch vehicle."
+  ],
+  "scoring_weights": {
+    "science": 0.35,
+    "reliability": 0.25,
+    "efficiency": 0.2,
+    "objectives": 0.2
+  }
+}
