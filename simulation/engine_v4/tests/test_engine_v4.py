@@ -646,6 +646,7 @@ def test_one_call_includes_full_mcas_scope_and_matches_interactive_defaults():
     params = {
         "events": {"enabled": False},
         "data_generation_kbps": {"hyperscape100": 20000},
+        "pointing_swath_warning_fraction": 0.20,
     }
     quick = run(seed=17, **params)
     anomaly_ids = {record["anomaly_id"] for record in quick["mission"]["anomalies"]}
