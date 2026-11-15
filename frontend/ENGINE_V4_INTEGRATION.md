@@ -12,7 +12,17 @@ Earth-observation API and the Mars rover API work as before.
 | `GET /scenarios` | Scenario briefing and default parameters (gameplay assumptions) |
 | `POST /run` | Configuration in; feasibility, constraints, score, mission and debrief out |
 | `POST /recommend` | Same body; up to five non-dominated alternative designs |
+| `POST /runs` | Launch and store. Body adds optional `name`. `201` with `{run_id, name, created_at, scenario_parameters, result}` |
+| `GET /runs` | Login required. The player's stored runs, newest first |
+| `GET /runs/{run_id}` | One stored run in full |
 | `GET /testbench` | Developer test page (not the game UI) |
+
+Stored runs follow the same rules as the existing `/runs` routes: send `Authorization: Bearer <token>`
+to save to a player's history; a guest run has no owner and is readable by anyone holding its id;
+another player's run answers `404`. A design that fails a hard constraint answers `409 not_launchable`
+and the error carries the full `result`. A `CONDITIONAL` design launches and is flagged.
+Each history row records `uses_parameter_overrides`, so runs that changed scenario parameters
+(for example a larger budget) can be told apart from runs on the scenario's own values.
 
 ## Try it
 
@@ -63,8 +73,9 @@ Errors use the backend's shape: `{"error": {"code", "message", "field", "details
 
 ## Not integrated yet
 
-- Saved missions, launched runs and history still use the mock `Design` and the placeholder engine.
-  A v4 result is not stored.
+- Saved designs (`/missions`) still use the mock `Design`; there is no saved-design slot for a v4
+  configuration yet. Stored v4 runs keep the configuration that was flown.
+- v4 runs are listed by `GET /simulation/runs`, separately from the placeholder runs in `GET /runs`.
 - The v4 engine runs a whole mission in one call; there are no player decisions during operations.
 - Every design is `CONDITIONAL` unless the scenario sets `bus_mass_kg_assumption`, because the
   platform bus mass is not published.

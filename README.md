@@ -53,11 +53,16 @@ Run every command from the repository root.
 | `GET /simulation/scenarios` | no | Real-data scenarios and their gameplay parameters |
 | `POST /simulation/run` | no | Real-data engine: constraints, score, mission, debrief |
 | `POST /simulation/recommend` | no | Alternative designs (Pareto filter) |
+| `POST /simulation/runs` | optional | Launch with the real-data engine and store the result |
+| `GET /simulation/runs` | yes | My stored real-data runs, newest first |
+| `GET /simulation/runs/{id}` | owner | One stored real-data run in full |
 | `GET /simulation/testbench` | no | Developer test page for the real-data engine |
 
 The `/simulation/*` routes use the real-data engine in `simulation/engine_v4/`
-(see `frontend/ENGINE_V4_INTEGRATION.md`). Saved missions, runs and history
-still use the placeholder engine and mock data.
+(see `frontend/ENGINE_V4_INTEGRATION.md`). Its runs are stored in their own table
+and listed by `GET /simulation/runs`. Saved missions and the `/runs` routes still
+use the placeholder engine and mock data. The new table is created automatically;
+an existing database file does not need to be deleted.
 
 Send the token as `Authorization: Bearer <token>`.
 

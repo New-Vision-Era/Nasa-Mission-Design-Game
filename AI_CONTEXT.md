@@ -471,6 +471,7 @@ space-mission-game/
 | `sessions` | token hash, user id, created_at, expires_at (7 days by default) |
 | `missions` | A saved design owned by one player: name, scenario id, design JSON, timestamps |
 | `runs` | One launched mission: owner (NULL for a guest), optional mission id, seed, catalog version, status, full run state JSON (includes the design flown), debrief JSON, outcome, total score, timestamps |
+| `simulation_runs` | One launched real-data (engine v4) mission, always complete: owner (NULL for a guest), optional name, scenario id, dataset id, engine version, seed, feasibility, outcome, total score, whether scenario parameters were overridden, configuration JSON, override JSON, full result JSON, created_at |
 
 ### Real-data engine (`simulation/engine_v4/`, implemented)
 
@@ -496,9 +497,12 @@ data/equipment_v4.json, data/scenarios_v4/
 ```
 
 It is additive, like the Mars rover API: no existing route, model or
-table changed. It is NOT behind the four-function interface below: it
-runs a whole mission in one call, has no player decisions during
-operations, and its results are not stored as runs.
+existing table changed. It is NOT behind the four-function interface
+below: it runs a whole mission in one call and has no player decisions
+during operations. Its launched runs are stored in their own table,
+`simulation_runs`, through
+`backend/app/services/simulation_v4_service.py` (the only backend file
+that calls the v4 engine).
 
 ### Simulation engine interface
 
@@ -676,6 +680,9 @@ Every error has the same body:
 | `GET /simulation/scenarios` | Scenario briefing and default parameters (gameplay assumptions) |
 | `POST /simulation/run` | `{configuration, scenario_parameters?, seed?}` in; feasibility, constraints, score, mission, debrief out |
 | `POST /simulation/recommend` | Same body; up to five non-dominated alternatives |
+| `POST /simulation/runs` | Launch and store: `{configuration, scenario_parameters?, seed?, name?}`. Login optional, same guest rules as `/runs`. `409 not_launchable` (with `result`) if a hard constraint fails |
+| `GET /simulation/runs` | Login required. The player's stored real-data runs, newest first |
+| `GET /simulation/runs/{run_id}` | Owner (or anyone for a guest run). `{run_id, name, created_at, status, uses_parameter_overrides, scenario_parameters, result}` |
 | `GET /simulation/testbench` | Developer test page, not the game UI |
 
 The v4 configuration differs from the mock `Design`: it is flat (no
@@ -943,8 +950,9 @@ demonstrate.
 ## 13. Project status --- update this section continuously
 
 **Status (2026-11-15):** Backend first version written. Real-data
-engine v4 integrated into the backend as additive endpoints. Saved runs
-and history still use the placeholder engine and mock data. No game UI
+engine v4 integrated into the backend as additive endpoints, including
+stored runs and per-player history. Saved designs (`/missions`) and the
+`/runs` routes still use the placeholder engine and mock data. No game UI
 in this repository yet (only API bridge scripts in `frontend/`).
 
 ### Implemented
@@ -968,6 +976,9 @@ in this repository yet (only API bridge scripts in `frontend/`).
     mission with four seeded gameplay events; Pareto recommendations.
 -   `/simulation/catalog`, `/simulation/scenarios`, `/simulation/run`,
     `/simulation/recommend`, `/simulation/testbench`.
+-   Stored real-data runs: `POST /simulation/runs`,
+    `GET /simulation/runs`, `GET /simulation/runs/{run_id}`, with the
+    same ownership and guest rules as the placeholder runs.
 
 ### Test status (be honest about this)
 
@@ -999,8 +1010,9 @@ in this repository yet (only API bridge scripts in `frontend/`).
 -   Login rate limiting, password reset, email.
 -   Deployment.
 
--   v4 engine behind the four-function interface; saving v4 results
-    as runs and showing them in history.
+-   v4 engine behind the four-function interface. v4 runs and
+    placeholder runs are stored and listed separately.
+-   Saved designs (`/missions`) for a v4 configuration.
 -   Player decisions during v4 operations.
 -   Onboard storage limits, real reliability data, orbital lifetime,
     rocket-equation delta-v.
@@ -1059,6 +1071,9 @@ Add a new entry whenever a major decision is made.
 | 2026-11-15 | A hard constraint that cannot be evaluated makes a design `CONDITIONAL`, never a pass | Unknown must not count as zero or as success | Simulation, frontend |
 | 2026-11-15 | Total spacecraft mass needs `bus_mass_kg_assumption` in the scenario; it ships as `null` | Bus mass is unpublished; without it launch mass, rideshare price and delta-v are `NOT_EVALUATED` | Scenarios, game rules |
 | 2026-11-15 | The v4 budget check covers platform plus launch only | Almost all component prices are unpublished and are not counted as zero | Scoring, scenarios |
+| 2026-11-15 | v4 runs stored in a new `simulation_runs` table with their own routes, instead of reusing `runs` and `RunState` | The v4 result has a different shape and no pending decisions; a separate table leaves `models.py`, `RunState` and existing history untouched, and needs no database reset | Backend, database, frontend |
+| 2026-11-15 | A v4 design that fails a hard constraint cannot launch (`409 not_launchable`); a `CONDITIONAL` design launches and is flagged | Same rule as the placeholder runs; whether `CONDITIONAL` may launch is still a team decision | Game rules |
+| 2026-11-15 | Stored v4 runs accept scenario parameter overrides and record `uses_parameter_overrides` | A gameplay bus mass is currently only available as an override; the flag keeps such runs distinguishable in history. Remove overrides from `POST /simulation/runs` once the scenario values are agreed, so a client cannot give itself a bigger budget | Backend, game rules |
 
 ### Current blockers
 
@@ -1081,8 +1096,10 @@ Add a new entry whenever a major decision is made.
     launch; count subsystems against platform payload mass and power;
     check volume for instruments only; which contract the new UI builds
     against (mock `Design` or v4 configuration).
-8.  Pair 3 with Person 2: if the v4 contract is adopted, store v4
-    results as runs so history works with the real engine.
+8.  Whole team: once scenario values are agreed, stop accepting
+    `scenario_parameters` on `POST /simulation/runs`.
+9.  Pair 3: if the new UI adopts the v4 configuration, add saved designs
+    for it and decide whether to merge the two history lists.
 
 ------------------------------------------------------------------------
 

@@ -4,12 +4,13 @@
   "use strict";
   const BASE = window.ENGINE_V4_API_BASE || "http://127.0.0.1:8000/api/v1/simulation";
 
-  async function request(path, body) {
+  async function request(path, body, token) {
+    const auth = token ? {Authorization: `Bearer ${token}`} : {};
     let response;
     try {
-      response = await fetch(BASE + path, body === undefined ? {} : {
+      response = await fetch(BASE + path, body === undefined ? {headers: auth} : {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: {"Content-Type": "application/json", ...auth},
         body: JSON.stringify(body)
       });
     } catch (_) {
@@ -21,6 +22,7 @@
       error.code = data.error?.code;
       error.field = data.error?.field;
       error.details = data.error?.details || [];
+      error.result = data.error?.result;  /* present on 409 not_launchable */
       throw error;
     }
     return data;
@@ -35,6 +37,15 @@
     run: (configuration, scenarioParameters, seed) =>
       request("/run", {configuration, scenario_parameters: scenarioParameters || null, seed: seed ?? 0}),
     recommend: (configuration, scenarioParameters) =>
-      request("/recommend", {configuration, scenario_parameters: scenarioParameters || null})
+      request("/recommend", {configuration, scenario_parameters: scenarioParameters || null}),
+    /* Launch and store. token: bearer token from /auth/login, or omit for a guest run.
+       options: {scenarioParameters, seed, name}. Rejects with code "not_launchable" if a hard constraint fails. */
+    launch: (configuration, options = {}, token) =>
+      request("/runs", {configuration, scenario_parameters: options.scenarioParameters || null,
+                        seed: options.seed ?? null, name: options.name || null}, token),
+    /* The logged-in player's stored runs, newest first */
+    history: token => request("/runs", undefined, token),
+    /* One stored run in full: {run_id, name, created_at, scenario_parameters, result} */
+    getRun: (runId, token) => request("/runs/" + encodeURIComponent(runId), undefined, token)
   };
 })();
