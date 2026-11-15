@@ -34,11 +34,12 @@ export function render({ go }) {
           <div><span>Data backlog</span><b id="o-backlog">—</b></div>
           <div><span>Anomalies</span><b id="o-anoms">0</b></div>
           <div><span>Decisions</span><b id="o-dec">0</b></div>
+          <div><span>Launch</span><b class="${st.risky_launch ? "st-warn" : "st-ok"}">${st.risky_launch ? "Damaged" : "Nominal"}</b></div>
         </div>
         <div class="divider" style="margin:0"></div>
         <div class="kv">
-          <div><span>Main radio</span><b class="ellipsis" style="max-width:60%">${esc(nameOf(state.config.communication_system_ids.at(-1)))}</b></div>
-          <div><span>Payload</span><b class="ellipsis" style="max-width:60%">${esc(state.config.instrument_ids.map(nameOf).join(", "))}</b></div>
+          <div><span>Main radio</span><b>${esc(nameOf(state.config.communication_system_ids.at(-1)))}</b></div>
+          <div><span>Payload</span><b>${esc(state.config.instrument_ids.map(nameOf).join(", "))}</b></div>
         </div>
       </div>
       <div class="center">
@@ -67,7 +68,9 @@ export function render({ go }) {
 export function mounted() {
   const st = state.mission.state;
   // Static history first (launch, deployment, commissioning), then replay what was already shown.
-  st.mission_history.filter((h) => h.period == null && h.phase !== "mission_completion").forEach((h) => log("—", h.message, "phase"));
+  st.mission_history.filter((h) => h.period == null && h.phase !== "mission_completion")
+    .forEach((h) => log("—", h.message, h.kind === "accident" ? "anomaly" : "phase"));
+  if (st.risky_launch) setTimeout(() => setStatus("damaged"), 0);
   for (let p = 1; p <= state.shownPeriod; p++) paintPeriod(p, false);
   play();
 }
@@ -132,8 +135,9 @@ function phase(k) {
 function setStatus(kind) {
   if (!root) return;
   const s = root.querySelector("#o-status");
-  s.className = `status-big ${kind === "alert" ? "alert" : kind === "done" ? "done" : ""}`;
-  s.innerHTML = `<i></i> ${kind === "alert" ? "ANOMALY" : kind === "done" ? "MISSION COMPLETE" : "NOMINAL"}`;
+  const damaged = state.mission?.state?.risky_launch;
+  s.className = `status-big ${kind === "alert" ? "alert" : kind === "done" ? "done" : damaged ? "alert" : ""}`;
+  s.innerHTML = `<i></i> ${kind === "alert" ? "ANOMALY" : kind === "done" ? "MISSION COMPLETE" : damaged ? "DEGRADED" : "NOMINAL"}`;
 }
 
 async function play() {
@@ -165,6 +169,11 @@ async function play() {
       notify("completed");
       phase("d");
       setStatus("done");
+      for (let p = st.timeline.length + 1; p <= st.total_periods; p++) {
+        root.querySelector(`.tl-cell[data-p="${p}"]`)?.classList.add("lost");
+      }
+      root.querySelectorAll(".tl-cell.now").forEach((c) => c.classList.remove("now"));
+      st.mission_history.filter((h) => h.kind === "accident" && h.period != null).forEach((h) => log("END", h.message, "anomaly"));
       st.mission_history.filter((h) => h.phase === "mission_completion").forEach((h) => log("END", h.message.split(". ").slice(0, 1).join(". "), "phase"));
       root.querySelector("#o-next").style.display = "";
       root.querySelector("#o-dayof").textContent = `outcome ${st.outcome?.replaceAll("_", " ").toLowerCase() || ""}`;

@@ -1,6 +1,6 @@
 /* 04 · Engineering review + pre-launch validation, from the engine's constraint results. */
 import { state, nameOf, rec } from "../state.js";
-import { el, actions, esc, STATUS_GLYPH, LEVEL_CLASS, FEAS_CLASS } from "../ui.js";
+import { el, actions, esc, STATUS_GLYPH, LEVEL_CLASS } from "../ui.js";
 import { evaluateNow, focusSlot } from "./designer.js";
 import { STEP_TO_SLOT, usd } from "../catalog.js";
 import { prettyIds } from "./operations.js";
@@ -81,16 +81,34 @@ function paint() {
 
   const counts = { PASS: 0, WARNING: 0, FAIL: 0, NOT_EVALUATED: 0 };
   ev.constraints.forEach((k) => counts[k.status]++);
-  const feas = ev.feasibility.status;
+  const la = ev.launch_assessment;
+  const status = la.status;
   const sel = ev.constraints.find((k) => k.id === selected);
-  const risks = ev.risk_assessment.risks.filter((r) => r.level === "HIGH" || r.level === "MEDIUM").slice(0, 3);
+  const selRisk = status === "RISKY" ? la.risks.find((r) => r.constraint_id === selected) : null;
+  const selBlock = la.blocking.find((b) => b.constraint_id === selected);
   const pill = root.querySelector("#r-pill");
-  pill.className = `pill ${feas === "INFEASIBLE" ? "bad" : "ok"}`;
-  pill.innerHTML = `<i class="dot"></i> ${ev.launchable ? "GO" : "NO GO"}`;
+  pill.className = `pill ${status === "GO" ? "ok" : status === "RISKY" ? "warn" : "bad"}`;
+  pill.innerHTML = `<i class="dot"></i> ${status.replace("_", " ")}`;
+
+  const title = { GO: "Ready to fly", RISKY: "Risky launch", NO_GO: "Launch blocked" }[status];
+  const cls = { GO: "ok", RISKY: "warn", NO_GO: "fail" }[status];
+  let bottom;
+  if (status === "NO_GO") {
+    bottom = `<div class="stack" style="gap:6px"><span class="label">Why it cannot fly</span>
+      <div class="consequences">${la.blocking.map((b) => `<div><b class="st-fail">×</b><span>${esc(b.reason)}</span></div>`).join("")}</div></div>`;
+  } else if (status === "RISKY") {
+    bottom = `<div class="stack" style="gap:6px"><span class="label">If you launch now</span>
+      <div class="consequences">${la.risks.map((r) => `<div><b>!</b><span>${esc(r.consequence)}</span></div>`).join("")}</div></div>`;
+  } else {
+    const risks = ev.risk_assessment.risks.filter((r) => r.level === "HIGH" || r.level === "MEDIUM").slice(0, 3);
+    bottom = `<div class="stack" style="gap:6px">
+      <div class="row"><span class="label">Flight risks</span><span class="tag ${LEVEL_CLASS[ev.risk_assessment.overall_level]}">${ev.risk_assessment.overall_level}</span></div>
+      ${risks.map((r) => `<div class="row tiny" title="${esc(r.reason)}"><span class="ellipsis">${esc(r.title)}</span><span class="tag ${LEVEL_CLASS[r.level]}">${r.level}</span></div>`).join("") || '<span class="tiny">No medium or high risk.</span>'}</div>`;
+  }
 
   root.querySelector("#r-verdict").innerHTML = `
     <div class="eyebrow">Verdict</div>
-    <div class="big st-${FEAS_CLASS[feas]}">${feas === "FEASIBLE" ? "Ready to fly" : feas === "CONDITIONAL" ? "Conditional pass" : "Not launchable"}</div>
+    <div class="big st-${cls}">${title}</div>
     <div class="counts">
       <div><span class="label">Pass</span><b class="st-ok">${counts.PASS}</b></div>
       <div><span class="label">Review</span><b class="st-warn">${counts.WARNING + counts.NOT_EVALUATED}</b></div>
@@ -99,15 +117,12 @@ function paint() {
     ${sel ? `<div class="detail">
       <h4>${esc(sel.title)}</h4>
       <p title="${esc(sel.message)}">${esc(prettyIds(sel.message))}</p>
+      ${selBlock ? `<p class="st-fail" style="margin-top:6px">Blocks the launch.</p>` : selRisk ? `<p class="st-warn" style="margin-top:6px">In flight: ${esc(selRisk.consequence)}</p>` : ""}
       ${sel.status !== "PASS" ? `<button class="btn ghost" style="margin-top:10px;height:32px" data-action="fix" data-slot="${STEP_TO_SLOT[sel.related_step] || "platform"}">FIX IN WORKSPACE →</button>` : ""}
     </div>` : ""}
-    <div class="stack" style="gap:6px">
-      <div class="row"><span class="label">Flight risks</span><span class="tag ${LEVEL_CLASS[ev.risk_assessment.overall_level]}">${ev.risk_assessment.overall_level}</span></div>
-      ${risks.map((r) => `<div class="row tiny" title="${esc(r.reason)}"><span class="ellipsis">${esc(r.title)}</span><span class="tag ${LEVEL_CLASS[r.level]}">${r.level}</span></div>`).join("") || '<span class="tiny">No medium or high risk.</span>'}
-    </div>`;
+    ${bottom}`;
 
   const btn = root.querySelector("#r-launch");
   btn.disabled = !ev.launchable;
-  const hard = ev.feasibility.hard_failed.length + ev.feasibility.hard_not_evaluated.length;
-  btn.textContent = ev.launchable ? "GO FOR LAUNCH ↗" : `FIX ${hard || counts.FAIL} HARD CHECK${(hard || counts.FAIL) === 1 ? "" : "S"}`;
+  btn.textContent = status === "GO" ? "GO FOR LAUNCH ↗" : status === "RISKY" ? "LAUNCH ANYWAY ↗" : `FIX ${la.blocking.length} BLOCKER${la.blocking.length === 1 ? "" : "S"}`;
 }

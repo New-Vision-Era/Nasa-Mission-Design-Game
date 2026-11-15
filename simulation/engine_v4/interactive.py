@@ -21,7 +21,7 @@ from .configuration import ConfigError, load_scenario, parse_config
 from .data_loader import Catalog, load_catalog
 from .engine import (ENGINE_VERSION, LIMITATIONS, build_explanations, evaluate_design as _evaluate,
                      list_assumptions, provenance)
-from .mission.mcas import anomaly_catalog, history, state_manager
+from .mission.mcas import anomaly_catalog, history, launch_risk, state_manager
 from .mission.mcas.models import (ACTIVE, AWAITING_DECISION, COMPLETED, NOT_LAUNCHED, PERSISTING, DecisionError,
                                   RunContext)
 from .mission.mcas.risk_assessment import assess_risk
@@ -56,12 +56,14 @@ def evaluate_design(configuration: Any, scenario_parameters: Optional[dict] = No
     """Engineering evaluation plus the MCAS risk assessment. Nothing is flown."""
     ctx, catalog = _context(configuration, scenario_parameters, 0, catalog)
     ev = ctx.evaluation
+    launch = launch_risk.assess(ev, ctx.sel, ctx.params, (ctx.radio or {}).get("id"))
     return {
         "engine_version": ENGINE_VERSION, "mcas_version": MCAS_VERSION, "dataset_id": catalog.dataset_id,
         "scenario_id": ctx.scenario_id, "mission_type": ctx.mission_type,
         "configuration": ctx.cfg.model_dump(),
         "feasibility": ev["feasibility"],
-        "launchable": ev["feasibility"]["status"] != "INFEASIBLE",
+        "launchable": launch["status"] != launch_risk.NO_GO,
+        "launch_assessment": launch,
         "resources": ev["resources"],
         "margins": ev["margins"],
         "constraints": [r.to_dict() for r in ev["constraints"]],
@@ -94,6 +96,8 @@ def _state(ctx: RunContext, prog: state_manager.Progress, mission_id: str, scena
         "decisions": dict(decisions),
         "feasibility": feas,
         "conditional_launch": feas["status"] == "CONDITIONAL",
+        "risky_launch": prog.launch is not None and prog.launch["status"] == launch_risk.RISKY,
+        "launch_assessment": prog.launch,
         "current_phase": phase,
         "current_period": prog.period,
         "total_periods": ctx.periods if prog.status != NOT_LAUNCHED else 0,
@@ -117,24 +121,34 @@ def _state(ctx: RunContext, prog: state_manager.Progress, mission_id: str, scena
         "score_total": None,
     }
     if prog.status == NOT_LAUNCHED:
-        state["mission_history"] = [{"phase": "launch", "period": None,
-                                     "message": "Not launched: the design fails hard constraint(s) "
-                                                + ", ".join(feas["hard_failed"]) + "."}]
+        reason = (" ".join(b["reason"] for b in prog.launch["blocking"]) if prog.launch
+                  else "the design fails hard constraint(s) " + ", ".join(feas["hard_failed"]) + ".")
+        state["mission_history"] = [{"phase": "launch", "period": None, "message": "Not launched: " + reason}]
         state["outcome"] = "FAILURE"
     elif prog.status == COMPLETED:
         mission = build_mission(ctx, prog)
-        score = compute_score(ctx.sel, ctx.params, ctx.evaluation, ctx.performance, mission)
+        score = _score(ctx, mission)
         state["outcome"], state["score_total"] = mission["outcome"], score["total"]
         state["mission_history"] = prog.log + [{"phase": "mission_completion", "period": None,
                                                 "message": mission["explanation"]}]
     return state
 
 
+def _score(ctx: RunContext, mission: dict) -> dict:
+    """compute_score, then the risky-launch gates (no effect on feasible or conditional designs)."""
+    return launch_risk.adjust_score(
+        compute_score(ctx.sel, ctx.params, ctx.evaluation, ctx.performance, mission), mission)
+
+
 def start_run(configuration: Any, seed: int = 0, scenario_parameters: Optional[dict] = None,
               mission_id: Optional[str] = None, catalog: Optional[Catalog] = None) -> dict[str, Any]:
-    """Launch and advance to the first decision point, or to the end. An infeasible design is NOT_LAUNCHED."""
+    """Launch and advance to the first decision point, or to the end.
+
+    Only a catastrophic design is NOT_LAUNCHED; a design with smaller hard failures flies as a risky
+    launch and suffers their consequences (see mission/mcas/launch_risk.py).
+    """
     ctx, _ = _context(configuration, scenario_parameters, seed, catalog)
-    prog = state_manager.advance(ctx, {})
+    prog = state_manager.advance(ctx, {}, risky_launch=True)
     state = _state(ctx, prog, mission_id or f"mission_{uuid.uuid4().hex[:12]}", scenario_parameters, {})
     _RUNS[state["mission_id"]] = state
     return state
@@ -163,14 +177,14 @@ def apply_decision(mission: Union[str, dict], anomaly_id: str, decision_id: str,
     """
     state = _load(mission)
     ctx, _ = _context(state["configuration"], state.get("scenario_parameters"), state["seed"], catalog)
-    current = state_manager.advance(ctx, state["decisions"])  # replay: never trust a stored pending record
+    current = state_manager.advance(ctx, state["decisions"], risky_launch=True)  # replay: never trust a stored pending record
     if current.pending is None:
         raise DecisionError("no_pending_decision", "This run is not waiting for a decision.")
     if anomaly_id != current.pending["anomaly_id"]:
         raise DecisionError("wrong_anomaly", f"The run is waiting for a decision on "
                                              f"'{current.pending['anomaly_id']}', not '{anomaly_id}'.")
     decisions = {**state["decisions"], anomaly_id: decision_id}
-    prog = state_manager.advance(ctx, decisions)  # validates the response
+    prog = state_manager.advance(ctx, decisions, risky_launch=True)  # validates the response
     new_state = _state(ctx, prog, state["mission_id"], state.get("scenario_parameters"), decisions)
     _RUNS[new_state["mission_id"]] = new_state
     return new_state
@@ -180,12 +194,12 @@ def build_debrief(mission: Union[str, dict], catalog: Optional[Catalog] = None) 
     """Mission history, anomaly history, objectives, outcome and score for a finished run."""
     state = _load(mission)
     ctx, catalog = _context(state["configuration"], state.get("scenario_parameters"), state["seed"], catalog)
-    prog = state_manager.advance(ctx, state["decisions"])
+    prog = state_manager.advance(ctx, state["decisions"], risky_launch=True)
     if prog.status == AWAITING_DECISION:
         raise DecisionError("decision_pending", f"The mission is not finished: a decision on "
                                                 f"'{prog.pending['anomaly_id']}' is pending.")
     mission_result = build_mission(ctx, prog)
-    score = compute_score(ctx.sel, ctx.params, ctx.evaluation, ctx.performance, mission_result)
+    score = _score(ctx, mission_result)
     risk = assess_risk(ctx)
 
     # same design with no external event and no anomaly consequence, to show what the anomalies cost
@@ -194,8 +208,9 @@ def build_debrief(mission: Union[str, dict], catalog: Optional[Catalog] = None) 
         quiet = ctx.params.model_copy(update={"events": ctx.params.events.model_copy(update={"enabled": False})})
         ref_ctx = RunContext(ctx.cfg, ctx.scenario_id, ctx.mission_type, ctx.sel, quiet, ctx.evaluation,
                              ctx.performance, ctx.seed)
-        ref_mission = build_mission(ref_ctx, state_manager.advance(ref_ctx, {}, scope=(), interactive=False))
-        ref_score = compute_score(ctx.sel, ctx.params, ctx.evaluation, ctx.performance, ref_mission)
+        ref_mission = build_mission(ref_ctx, state_manager.advance(ref_ctx, {}, scope=(), interactive=False,
+                                                                   risky_launch=True))
+        ref_score = _score(ctx, ref_mission)
         reference = {
             "outcome": ref_mission["outcome"], "objective_fraction": ref_mission["objective_fraction"],
             "score_total": ref_score["total"],
@@ -215,6 +230,7 @@ def build_debrief(mission: Union[str, dict], catalog: Optional[Catalog] = None) 
         "configuration": ctx.cfg.model_dump(),
         "status": prog.status,
         "feasibility": ctx.evaluation["feasibility"],
+        "launch_assessment": prog.launch,
         "outcome": mission_result["outcome"],
         "objectives": mission_result["objectives"],
         "score": score,

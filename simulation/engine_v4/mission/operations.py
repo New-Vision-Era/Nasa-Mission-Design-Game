@@ -45,7 +45,8 @@ def build_mission(ctx: RunContext, progress: "state_manager.Progress", legacy_sh
     sel, params, evaluation, performance = ctx.sel, ctx.params, ctx.evaluation, ctx.performance
     feas = evaluation["feasibility"]
     if progress.status == NOT_LAUNCHED:
-        return _not_launched(feas)
+        return _not_launched(feas, progress.launch)
+    launch = progress.launch
 
     periods = params.science_periods
     generated_day, capacity_day = ctx.generated_day, ctx.capacity_day
@@ -104,6 +105,8 @@ def build_mission(ctx: RunContext, progress: "state_manager.Progress", legacy_sh
         outcome = FAILURE
 
     conditional = feas["status"] == CONDITIONAL
+    if launch is not None and launch["total_loss"]:
+        outcome = FAILURE
     stages = [
         _stage("launch", "Launch", f"Launched on {sel.launcher['name']} to {sel.orbit['name']}."
                + (" Launch-mass compatibility could not be fully verified from real data." if conditional else "")),
@@ -118,8 +121,11 @@ def build_mission(ctx: RunContext, progress: "state_manager.Progress", legacy_sh
         _stage("mission_completion", "Mission completion",
                f"Mission ended after {params.mission_duration_days:g} days with outcome {outcome}."),
     ]
+    if launch is not None:
+        stages = _risky_stages(stages, launch, len(progress.timeline), periods)
     mission = {
         "launched": True,
+        "launch": launch,
         "conditional_launch": conditional,
         "outcome": outcome,
         "objective_fraction": None if objective_fraction is None else round(objective_fraction, 4),
@@ -132,7 +138,7 @@ def build_mission(ctx: RunContext, progress: "state_manager.Progress", legacy_sh
                    "data_downlinked_bits": downlinked_total if (generated_day is not None
                                                                 and capacity_day is not None) else None,
                    "backlog_bits": backlog if generated_day is not None else None},
-        "explanation": _explain(outcome, objectives, conditional, feas),
+        "explanation": _explain(outcome, objectives, conditional, feas, launch),
     }
     if not legacy_shape:
         mission["anomalies"] = progress.records
@@ -144,12 +150,36 @@ def _stage(stage_id: str, title: str, message: str, status: str = "completed") -
     return {"id": stage_id, "title": title, "status": status, "message": message}
 
 
-def _not_launched(feas: dict) -> dict:
-    msg = ("The design fails hard constraint(s): " + ", ".join(feas["hard_failed"])
-           + ". It cannot launch, so no mission was flown.")
+def _risky_stages(stages: list[dict], launch: dict, flown: int, periods: int) -> list[dict]:
+    """Rewrite stage statuses for a risky launch: where it was lost, or what it cost."""
+    loss = launch["total_loss"]
+    order = ["launch", "deployment", "commissioning", "science_operations", "data_downlink", "mission_completion"]
+    lost_index = {"launch": 0, "orbit_insertion": 1, "commissioning": 2}.get(loss["stage"]) if loss else None
+    out = []
+    for i, st in enumerate(stages):
+        if lost_index is not None and i == lost_index:
+            st = {**st, "status": "failed", "message": loss["reason"]}
+        elif lost_index is not None and i > lost_index:
+            st = {**st, "status": "not_reached", "message": "Not reached: the spacecraft was lost."}
+        elif st["id"] == "launch":
+            st = {**st, "status": "degraded", "message": st["message"] + " Risky launch: "
+                  + " ".join(r["consequence"] for r in launch["risks"])}
+        elif st["id"] == "science_operations" and flown < periods:
+            st = {**st, "status": "degraded", "message": st["message"] + f" Re-entered after {flown} periods."}
+        out.append(st)
+    return out
+
+
+def _not_launched(feas: dict, launch: Optional[dict] = None) -> dict:
+    if launch and launch.get("blocking"):
+        msg = ("Launch refused: " + " ".join(b["reason"] for b in launch["blocking"]))
+    else:
+        msg = ("The design fails hard constraint(s): " + ", ".join(feas["hard_failed"])
+               + ". It cannot launch, so no mission was flown.")
     names = ["launch", "deployment", "commissioning", "science_operations", "data_downlink", "mission_completion"]
     return {
-        "launched": False, "conditional_launch": False, "outcome": FAILURE, "objective_fraction": 0.0,
+        "launched": False, "launch": launch, "conditional_launch": False, "outcome": FAILURE,
+        "objective_fraction": 0.0,
         "objectives": [
             {"id": "observe_target", "title": "Observe with a suitable instrument", "achieved_fraction": 0.0,
              "message": "Not flown."},
@@ -164,8 +194,15 @@ def _not_launched(feas: dict) -> dict:
     }
 
 
-def _explain(outcome: str, objectives: list[dict], conditional: bool, feas: dict) -> str:
-    parts = [f"Outcome: {outcome}."] + [o["message"] for o in objectives]
+def _explain(outcome: str, objectives: list[dict], conditional: bool, feas: dict,
+             launch: Optional[dict] = None) -> str:
+    parts = [f"Outcome: {outcome}."]
+    if launch is not None and launch["total_loss"]:
+        parts.append(f"The spacecraft was lost during {launch['total_loss']['stage'].replace('_', ' ')}: "
+                     + launch["total_loss"]["reason"])
+    elif launch is not None:
+        parts.append("Risky launch: " + " ".join(r["consequence"] for r in launch["risks"]))
+    parts += [o["message"] for o in objectives]
     if conditional:
         parts.append("This result is conditional: " + ", ".join(feas["hard_not_evaluated"])
                      + " could not be evaluated from real data and are assumed to hold for the simulation.")

@@ -35,7 +35,7 @@ export function render({ go }) {
         <div class="facts">
           <div class="fact"><span class="label">Objectives</span><b>${pct(d.mission.objective_fraction)}</b></div>
           <div class="fact"><span class="label">Anomalies</span><b>${d.anomalies.length}</b></div>
-          <div class="fact"><span class="label">Your decisions</span><b>${d.decisions.filter((x) => x.decided_by === "player").length}</b></div>
+          <div class="fact"><span class="label">Launch</span><b class="${!d.launch_assessment ? "st-ok" : d.launch_assessment.total_loss ? "st-fail" : "st-warn"}">${!d.launch_assessment ? "Nominal" : d.launch_assessment.total_loss ? "Lost" : "Damaged"}</b></div>
           <div class="fact" title="${esc(ref?.note || "")}"><span class="label">Without anomalies</span><b>${ref ? +ref.score_total.toFixed(1) : "—"}</b></div>
         </div>
         <div class="card stack">

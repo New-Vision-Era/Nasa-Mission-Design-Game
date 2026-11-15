@@ -77,13 +77,13 @@ const PAGE = 6;
 
 export async function openHistory({ go }) {
   if (!state.user) {
-    toast("Log in to see your mission history.");
+    toast("Log in to see your saved missions.");
     openProfile({ onChange: () => openHistory({ go }) });
     return;
   }
   const box = el(`<div class="stack" style="gap:12px">
-    <div class="eyebrow">Mission history</div>
-    <h2 class="title" style="font-size:24px">Past missions</h2>
+    <div class="eyebrow">Saves</div>
+    <h2 class="title" style="font-size:24px">Saved missions</h2>
     <div class="hist-list" id="h-list"><div class="row"><span class="spinner"></span><span class="muted">Loading…</span></div></div>
     <div class="row"><span class="tiny" id="h-count"></span><div class="pager" id="h-pager"></div></div>
   </div>`);

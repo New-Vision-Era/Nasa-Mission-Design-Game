@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Optional
 
 from ...results import INFEASIBLE
-from . import anomaly_catalog, anomaly_generator, anomaly_resolver, decision_manager, history, trigger_engine
+from . import anomaly_catalog, anomaly_generator, anomaly_resolver, decision_manager, history, launch_risk, trigger_engine
 from .models import (AWAITING_DECISION, COMPLETED, NOT_LAUNCHED, DecisionError, Modifiers, RunContext)
 
 
@@ -29,27 +29,46 @@ class Progress:
     generated_total: float = 0.0
     downlinked_total: float = 0.0
     applied_decisions: list[dict] = field(default_factory=list)
+    launch: Optional[dict] = None                     # launch_risk.assess() for a risky launch
 
 
 def advance(ctx: RunContext, decisions: Optional[dict[str, str]] = None,
-            scope: tuple[str, ...] = anomaly_catalog.SCOPE_MVP, interactive: bool = True) -> Progress:
+            scope: tuple[str, ...] = anomaly_catalog.SCOPE_MVP, interactive: bool = True,
+            risky_launch: bool = False) -> Progress:
     """Run from launch with the given decisions ({anomaly_id: response_id}).
 
     interactive=True stops at the first anomaly that offers the player a real choice and has no decision
     yet. interactive=False applies each anomaly's default response and runs to the end.
+    risky_launch=True lets an INFEASIBLE design fly unless launch_risk finds it catastrophic; its failed
+    hard checks then become launch consequences. Without it, as before, INFEASIBLE means NOT_LAUNCHED.
     Raises DecisionError for a decision that names an unavailable or unknown response.
     """
     decisions = decisions or {}
+    launch = None
     if ctx.evaluation["feasibility"]["status"] == INFEASIBLE:
-        return Progress(status=NOT_LAUNCHED)
+        if not risky_launch:
+            return Progress(status=NOT_LAUNCHED)
+        launch = launch_risk.assess(ctx.evaluation, ctx.sel, ctx.params, (ctx.radio or {}).get("id"))
+        if launch["status"] == launch_risk.NO_GO:
+            return Progress(status=NOT_LAUNCHED, launch=launch)
 
     definitions = anomaly_catalog.definitions_for(ctx.mission_type, scope)
-    prog = Progress(status=COMPLETED, events=anomaly_generator.external_events(ctx))
-    for phase in ("launch", "deployment", "commissioning"):
-        prog.log.append({"phase": phase, "period": None, "message": f"{phase.capitalize()} completed."})
+    prog = Progress(status=COMPLETED, events=anomaly_generator.external_events(ctx), launch=launch)
     standing: list[Modifiers] = []
+    operating = ctx.periods
+    if launch is None:
+        for phase in ("launch", "deployment", "commissioning"):
+            prog.log.append({"phase": phase, "period": None, "message": f"{phase.capitalize()} completed."})
+    else:
+        prog.log.extend(launch_risk.launch_log(launch, ctx.sel, ctx.params))
+        if launch["total_loss"]:
+            return prog
+        operating = launch["operating_periods"]
+        if launch["science_factor"] < 1.0 or launch["downlink_factor"] < 1.0:
+            standing.append(Modifiers(science_factor=launch["science_factor"], data_factor=launch["science_factor"],
+                                      downlink_factor=launch["downlink_factor"]))
 
-    for period in range(1, ctx.periods + 1):
+    for period in range(1, operating + 1):
         prog.period = period
         period_mods: list[tuple[Modifiers, dict]] = []
         for definition, event in anomaly_generator.candidates(definitions, prog.events, period):
@@ -121,6 +140,10 @@ def advance(ctx: RunContext, decisions: Optional[dict[str, str]] = None,
             "anomaly_ids": [r["anomaly_id"] for r in prog.records if r["period"] == period],
         })
 
+    if operating < ctx.periods:
+        prog.log.append({"phase": "science_operations", "period": operating, "kind": "accident",
+                         "message": f"Orbit decayed: the spacecraft re-entered after {operating} of "
+                                    f"{ctx.periods} operation periods."})
     unused = [a for a in decisions if a not in {d["anomaly_id"] for d in prog.applied_decisions}]
     if unused:
         raise DecisionError("unknown_anomaly", f"No anomaly '{unused[0]}' occurs in this run.")

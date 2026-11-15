@@ -28,8 +28,10 @@ export function render({ go }) {
   ].slice(0, 5);
 
   const seen = new Set();
+  const launchIds = new Set((d.launch_assessment?.risks || []).map((r) => r.constraint_id));
   const improve = [
-    ...d.explanations.filter((e) => ["problem", "weakness", "warning"].includes(e.kind)),
+    ...(d.launch_assessment?.risks || []).map((r) => ({ message: `${r.title} failed: ${r.consequence}`, related_step: r.related_step, kind: "problem" })),
+    ...d.explanations.filter((e) => ["problem", "weakness", "warning"].includes(e.kind) && !launchIds.has(e.constraint_id)),
     ...d.score.categories.filter((c) => c.evaluable && c.score_fraction < 0.75).map((c) => ({ message: `${CAT_SHORT[c.id]}: ${c.reasons.find((r) => !/100%/.test(r)) || c.reasons[0] || "below target"}`, related_step: CAT_STEP[c.id] || null })),
     ...(d.debrief.engineering_weaknesses || []).map((w) => ({ message: w, related_step: (d.risk_assessment?.risks || []).find((r) => w.startsWith(r.title))?.related_step || null })),
     ...d.explanations.filter((e) => e.kind === "unknown" && e.constraint_id),

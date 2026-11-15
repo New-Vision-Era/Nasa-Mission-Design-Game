@@ -176,3 +176,15 @@ through the backend adapter; `pending_event {event_id, options[]}` maps to
 
 `python -m pytest simulation/engine_v4 -q` → 125 passed (93 existing + 32 in `test_mcas.py`),
 run on 2026-11-15. The backend and FastAPI layers were not run.
+
+## Risky launches (2026-11-15)
+
+Interactive missions no longer refuse every design that fails a hard constraint. `evaluate_design`
+returns `launch_assessment` with `status` `GO`, `RISKY` or `NO_GO`, and `launchable` is false only
+for `NO_GO`. Catastrophic means no instrument, no radio, a numeric hard check more than 2x over its
+limit, or a budget more than 1.5x over. A `RISKY` design flies and its failed checks become launch
+consequences (loss during ascent, at orbit insertion or at commissioning; shortened life; reduced
+science capacity). Run states and debriefs carry `risky_launch` and `launch_assessment`; science and
+reliability scores are gated by what was actually flown. All rules are gameplay assumptions, listed
+in `mission/mcas/launch_risk.py`. Feasible and conditional designs are unaffected, and the one-call
+`run_simulation()` keeps the old rule.

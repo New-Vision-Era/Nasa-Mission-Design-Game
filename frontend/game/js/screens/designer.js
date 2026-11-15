@@ -4,7 +4,7 @@ import { api } from "../api.js";
 import {
   state, notify, rec, apiReady, slotFilled, selectedIds, toggleComponent, powerQty, changeQty,
 } from "../state.js";
-import { el, actions, esc, STATUS_GLYPH, LEVEL_CLASS, FEAS_CLASS } from "../ui.js";
+import { el, actions, esc, STATUS_GLYPH, LEVEL_CLASS } from "../ui.js";
 import { SLOTS, NONE_CARD, cardMetrics, inspectorSpecs, iconFor, usd, unit, STEP_TO_SLOT, gbPerDay } from "../catalog.js";
 
 const TABS = [["spacecraft", "Spacecraft"], ["orbit", "Orbit"], ["launcher", "Launcher"]];
@@ -148,10 +148,10 @@ function paintTabs() {
       return `<button class="chip ${d.slot === s ? "active" : ""}" data-action="slot" data-slot="${s}">${need}${SLOTS[s].label}${count ? `<span class="count">${count}</span>` : ""}</button>`;
     }).join("");
   } else { sub.style.display = "none"; sub.innerHTML = ""; }
-  const feas = state.evaluation?.feasibility?.status;
+  const ls = state.evaluation?.launch_assessment?.status;
   const pill = root.querySelector("#d-feas");
-  pill.className = `pill ${feas === "FEASIBLE" ? "ok" : feas === "INFEASIBLE" ? "bad" : ""}`;
-  pill.innerHTML = `<i class="dot"></i> ${feas || "DRAFT"}`;
+  pill.className = `pill ${ls === "GO" ? "ok" : ls === "NO_GO" ? "bad" : ls === "RISKY" ? "warn" : ""}`;
+  pill.innerHTML = `<i class="dot"></i> ${ls ? ls.replace("_", " ") : "DRAFT"}`;
   root.querySelector("#d-review").disabled = !apiReady();
 }
 
@@ -312,7 +312,7 @@ function paintResources() {
         || '<p class="tiny st-ok">All evaluated checks pass.</p>'}
     </div>
     ${todo.length ? `<div class="todo">${todo.map((s) => `<button data-action="jump" data-slot="${s}"><i></i>Add ${SLOTS[s].label.toLowerCase()}</button>`).join("")}</div>` : ""}
-    <span class="tag ${FEAS_CLASS[ev.feasibility.status]}" style="align-self:flex-start;margin-top:auto">${ev.feasibility.status}</span>`;
+    <span class="tag ${{ GO: "ok", RISKY: "warn", NO_GO: "fail" }[ev.launch_assessment.status]}" style="align-self:flex-start;margin-top:auto">${{ GO: "Go for launch", RISKY: "Risky launch", NO_GO: "Launch blocked" }[ev.launch_assessment.status]}</span>`;
 }
 
 window.addEventListener("resize", () => { if (root && state.screen === "designer") paintParts(); });

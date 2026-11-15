@@ -1019,6 +1019,8 @@ lives in `frontend/game/` and is served by the backend at `/`.
     followed by `python -m pytest -q` is their first real run. Treat any
     failure there as expected first-run fixing, not as a regression.
 
+-   **Risky launches:** 7 tests in
+    `simulation/engine_v4/tests/test_launch_risk.py`, run and passing.
 -   **Game UI, play-tested but not through FastAPI:** the full journey
     was played in headless Chrome at 1280×720, 1366×768 and 1920×1080
     (no page scroll, no console error), including an infeasible design,
@@ -1112,6 +1114,8 @@ Add a new entry whenever a major decision is made.
 | 2026-11-15 | The UI builds against the v4 configuration and the MCAS routes (`/simulation/evaluate`, `/simulation/missions*`), not the mock `Design` | MCAS is the only path with player decisions and real data | Frontend, backend |
 | 2026-11-15 | UI rules: no page scroll, minimal text, team palette, 3D windows left empty for the visualization pair | Team design brief | Frontend |
 | 2026-11-15 | Mission history in the UI lists MCAS missions only (`GET /simulation/missions`) | The game launches only MCAS missions | Frontend, backend |
+| 2026-11-15 | **Risky launches (MCAS only).** Supersedes "a design failing a hard constraint cannot launch" for interactive missions: only *catastrophic* designs are refused (no instrument, no radio, a numeric hard check more than 2x over its limit, budget more than 1.5x). Smaller hard failures launch and become consequences: lost at ascent, orbit insertion or commissioning, shortened life, or reduced science capacity; science and reliability scores are gated by what was actually flown. Rules in `simulation/engine_v4/mission/mcas/launch_risk.py`, all labelled gameplay assumptions. The one-call `/simulation/run` and `/simulation/runs` keep the old rule | Team wants players to be able to make mistakes and see them fail in flight, not be blocked by a strict check | Simulation, game rules, frontend, scoring |
+| 2026-11-15 | UI: sidebar and top bar removed; profile and saves icons on the home screen only; palette changed to `--bg #141210`, `--panel #1e1b18`, `--panel2 #282420`, `--line #3a3430`, `--text #f7f4ef`, `--muted #a39b93`, `--accent #d97706`, `--green #059669`, `--yellow #d97706`, `--red #dc2626` | Team design decision | Frontend |
 
 ### Current blockers
 

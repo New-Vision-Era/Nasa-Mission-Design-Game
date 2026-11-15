@@ -24,9 +24,13 @@ Set `window.GAME_API_BASE` before `js/app.js` loads to point anywhere else.
   1366×768 and 1920×1080). Long lists are paged, long notes are clamped with the
   full text in a tooltip.
 - Little text: numbers, short labels and one-line explanations.
-- Palette: Deep Space Navy `#0B132B`, White `#FFFFFF`, Silver `#A3A3A3`,
-  Electric Cyan `#00E5FF`, Martian Orange `#FF5722` → `#8D230F`. Tokens are at the
-  top of `css/game.css`.
+- No sidebar and no top bar. The profile and saves icons are on the home screen only.
+- Palette: `--bg #141210`, `--panel #1e1b18`, `--panel2 #282420`, `--line #3a3430`,
+  `--text #f7f4ef`, `--muted #a39b93`, `--accent #d97706`, `--green #059669`,
+  `--yellow #d97706`, `--red #dc2626` (top of `css/game.css`).
+- Launch review has three verdicts from the engine's `launch_assessment`: **GO**,
+  **RISKY** (launch anyway; the failed checks become accidents or damage in flight)
+  and **NO GO** (catastrophic only).
 
 ## Files
 

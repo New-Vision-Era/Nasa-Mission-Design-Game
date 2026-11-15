@@ -26,7 +26,7 @@ export function render({ go }) {
         </div>
         <div class="home-icons">
           <button class="icon-btn" data-action="profile" title="Player profile" aria-label="Player profile">${SVG.profile}</button>
-          <button class="icon-btn" data-action="history" title="Mission history" aria-label="Mission history">${SVG.history}</button>
+          <button class="icon-btn" data-action="history" title="Saved missions" aria-label="Saved missions">${SVG.history}</button>
         </div>
       </div>
       <div class="mission-picker" role="radiogroup" aria-label="Mission">

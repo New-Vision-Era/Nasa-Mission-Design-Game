@@ -58,7 +58,7 @@ export const FEAS_CLASS = { FEASIBLE: "ok", CONDITIONAL: "warn", INFEASIBLE: "fa
 
 export const SVG = {
   profile: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.8 20c.5-4 3.1-6 7.2-6s6.7 2 7.2 6"/></svg>',
-  history: '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>',
+  history: '<svg viewBox="0 0 24 24"><path d="M5 3.8h11l3 3V20H5z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>',
 };
 
 export function pct(v) { return v == null ? "—" : `${Math.round(v * 100)}%`; }
