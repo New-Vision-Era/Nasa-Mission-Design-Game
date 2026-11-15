@@ -9,58 +9,67 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from ..configuration import ScenarioParams, Selection
-from ..results import CONDITIONAL, INFEASIBLE
-from .events import generate_events, resolve_event
+from ..results import CONDITIONAL
+from .events import resolve_event
+from .mcas import anomaly_catalog, state_manager
+from .mcas.models import NOT_LAUNCHED, RunContext
 
 SUCCESS, PARTIAL_SUCCESS, FAILURE = "SUCCESS", "PARTIAL_SUCCESS", "FAILURE"
 
 
 def simulate_mission(sel: Selection, params: ScenarioParams, evaluation: dict, performance: dict,
                      seed: int) -> dict[str, Any]:
+    """Whole mission in one call, no player decisions (the non-interactive v4 contract).
+
+    Runs through MCAS with the four original event types and each anomaly's default response,
+    which reproduces the original v4 behaviour exactly.
+    """
+    ctx = RunContext(cfg=None, scenario_id="", mission_type=anomaly_catalog.EARTH_OBSERVATION, sel=sel,
+                     params=params, evaluation=evaluation, performance=performance, seed=seed)
+    progress = state_manager.advance(ctx, scope=anomaly_catalog.SCOPE_LEGACY, interactive=False)
+    return build_mission(ctx, progress, legacy_shape=True)
+
+
+def _count(value: float):
+    """Whole numbers print and serialise as integers, as before; fractions keep two decimals."""
+    return int(round(value)) if abs(value - round(value)) < 1e-9 else round(value, 2)
+
+
+def build_mission(ctx: RunContext, progress: "state_manager.Progress", legacy_shape: bool = False) -> dict[str, Any]:
+    """Mission result (objectives, outcome, stages, timeline, totals) from a finished MCAS run.
+
+    legacy_shape=True returns exactly the keys of the original v4 result. Otherwise the result also
+    carries the anomaly records and the per-period science credit.
+    """
+    sel, params, evaluation, performance = ctx.sel, ctx.params, ctx.evaluation, ctx.performance
     feas = evaluation["feasibility"]
-    if feas["status"] == INFEASIBLE:
+    if progress.status == NOT_LAUNCHED:
         return _not_launched(feas)
 
-    relevant = set(performance["relevant_instrument_ids"])
     periods = params.science_periods
-    days_per_period = params.mission_duration_days / periods
-    generated_day = evaluation["data"]["generated_bits_per_day"]
-    capacity_day = evaluation["downlink"]["bits_per_day"]
-    radio = next((r for r in sel.comms if r["id"] == evaluation["downlink"]["radio_id"]), None)
-    generation_w = (evaluation["power"].get("generation") or {}).get("value_w")
-    demand_w = evaluation["power"]["demand"]["known_avg_w"]
+    generated_day, capacity_day = ctx.generated_day, ctx.capacity_day
+    science_done = _count(progress.science_done)
+    backlog, generated_total, downlinked_total = progress.backlog, progress.generated_total, progress.downlinked_total
 
-    resolved = [resolve_event(e, sel, params, radio, generation_w, demand_w)
-                for e in generate_events(sel, params, seed)]
-    by_period: dict[int, list[dict]] = {}
-    for e in resolved:
-        by_period.setdefault(e["period"], []).append(e)
+    resolved = [resolve_event(e, sel, params, ctx.radio, ctx.generation_w, ctx.demand_w) for e in progress.events]
+    timeline = progress.timeline
+    if legacy_shape:
+        keep = ("period", "elapsed_days", "science_observed", "data_generated_bits", "data_downlinked_bits",
+                "backlog_bits", "event_types")
+        timeline = [{k: row[k] for k in keep} for row in timeline]
+    else:
+        by_event = {(r["period"], r["definition_id"], r["facts"].get("instrument_id")): r
+                    for r in progress.records}
+        source = {d.trigger.get("source_event"): d.id for d in anomaly_catalog.CATALOG.values()}
+        for e in resolved:
+            rec = by_event.get((e["period"], source.get(e["type"]), e.get("instrument_id"))) \
+                or by_event.get((e["period"], source.get(e["type"]), None))
+            if rec is not None:
+                e["anomaly_id"], e["response_id"] = rec["anomaly_id"], rec.get("response_id")
+                e["explanation"] = rec["outcome"]
 
-    science_done, backlog, generated_total, downlinked_total = 0, 0.0, 0.0, 0.0
-    timeline = []
-    for period in range(1, periods + 1):
-        effects = [e["effect"] for e in by_period.get(period, []) if e["effect"]["applies"]]
-        off = {e["instrument_off"] for e in effects if e["instrument_off"]}
-        science_lost = any(e["science_lost"] for e in effects)
-        downlink_lost = any(e["downlink_lost"] for e in effects)
-        observing = bool(relevant - off) and not science_lost
-        science_done += 1 if observing else 0
-        produced = sent = None
-        if generated_day is not None:
-            active_share = 0.0 if science_lost else _active_share(sel, off)
-            produced = generated_day * days_per_period * active_share
-            generated_total += produced
-            backlog += produced
-            if capacity_day is not None:
-                sent = 0.0 if downlink_lost else min(backlog, capacity_day * days_per_period)
-                backlog -= sent
-                downlinked_total += sent
-        timeline.append({"period": period, "elapsed_days": round(period * days_per_period, 2),
-                         "science_observed": observing, "data_generated_bits": produced,
-                         "data_downlinked_bits": sent, "backlog_bits": backlog if produced is not None else None,
-                         "event_types": [e["type"] for e in by_period.get(period, [])]})
-
-    observe_fraction = science_done / periods if performance["has_required_instrument"] else 0.0
+    observe_fraction = progress.science_done / periods if performance["has_required_instrument"] else 0.0
+    equivalent = "" if isinstance(science_done, int) else "the equivalent of "
     if generated_day is None or capacity_day is None:
         return_fraction = None
         return_msg = ("Data return is not evaluated: instrument data rates or downlink capacity are unknown "
@@ -74,7 +83,7 @@ def simulate_mission(sel: Selection, params: ScenarioParams, evaluation: dict, p
     objectives = [
         {"id": "observe_target", "title": "Observe with a suitable instrument",
          "achieved_fraction": round(observe_fraction, 4),
-         "message": (f"A suitable instrument observed in {science_done} of {periods} operation periods."
+         "message": (f"A suitable instrument observed in {equivalent}{science_done} of {periods} operation periods."
                      if performance["has_required_instrument"] else
                      "No instrument of a required family was on board, so the observation objective was not met.")},
         {"id": "return_data", "title": "Return the science data to Earth",
@@ -108,7 +117,7 @@ def simulate_mission(sel: Selection, params: ScenarioParams, evaluation: dict, p
         _stage("mission_completion", "Mission completion",
                f"Mission ended after {params.mission_duration_days:g} days with outcome {outcome}."),
     ]
-    return {
+    mission = {
         "launched": True,
         "conditional_launch": conditional,
         "outcome": outcome,
@@ -124,13 +133,10 @@ def simulate_mission(sel: Selection, params: ScenarioParams, evaluation: dict, p
                    "backlog_bits": backlog if generated_day is not None else None},
         "explanation": _explain(outcome, objectives, conditional, feas),
     }
-
-
-def _active_share(sel: Selection, off: set) -> float:
-    """Share of instruments still producing data this period."""
-    if not sel.instruments:
-        return 0.0
-    return sum(1 for i in sel.instruments if i["id"] not in off) / len(sel.instruments)
+    if not legacy_shape:
+        mission["anomalies"] = progress.records
+        mission["events_not_applicable"] = progress.not_eligible
+    return mission
 
 
 def _stage(stage_id: str, title: str, message: str, status: str = "completed") -> dict:

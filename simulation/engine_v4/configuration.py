@@ -133,6 +133,7 @@ class Scenario:
     name: str
     briefing: str
     params: ScenarioParams
+    mission_type: str = "earth_observation"
 
 
 def _format_validation_error(exc: ValidationError, prefix: str = "") -> list[dict]:
@@ -187,7 +188,8 @@ def load_scenario(scenario_id: str, overrides: Optional[dict] = None,
     except ValidationError as exc:
         raise ConfigError(_format_validation_error(exc, "scenario_parameters.")) from None
     return Scenario(id=raw.get("id", scenario_id), name=raw.get("name", scenario_id),
-                    briefing=raw.get("briefing", ""), params=params)
+                    briefing=raw.get("briefing", ""), params=params,
+                    mission_type=raw.get("mission_type", "earth_observation"))
 
 
 @dataclass

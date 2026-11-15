@@ -77,3 +77,44 @@ def v4_get_run(run_id: str, user: OptionalUser, container: ContainerDep) -> dict
 def v4_testbench() -> HTMLResponse:
     """Developer test page for the engine. Not the game UI."""
     return HTMLResponse(PAGE.read_text(encoding="utf-8"))
+
+
+# -- MCAS: resumable, decision-driven mission runs -----------------------------
+
+@router.post("/evaluate")
+def mcas_evaluate(container: ContainerDep, body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """Evaluate feasibility and MCAS risk before launching; no mission is started."""
+    return container.simulation_v4.evaluate_interactive(body)
+
+
+@router.post("/missions", status_code=201)
+def mcas_start(body: dict[str, Any] = Body(...), user: OptionalUser = None,
+               container: ContainerDep = None) -> dict[str, Any]:
+    """Start a step-by-step MCAS mission and persist its JSON state."""
+    return container.simulation_v4.start_mcas(user, body)
+
+
+@router.get("/missions")
+def mcas_history(user: CurrentUser, container: ContainerDep, limit: int = 50,
+                 offset: int = 0) -> list[dict[str, Any]]:
+    """List the logged-in player's interactive mission history."""
+    return container.simulation_v4.mcas_history(user, limit=limit, offset=offset)
+
+
+@router.get("/missions/{mission_id}")
+def mcas_get(mission_id: str, user: OptionalUser, container: ContainerDep) -> dict[str, Any]:
+    """Retrieve the current state of an interactive mission."""
+    return container.simulation_v4.get_mcas(user, mission_id)
+
+
+@router.post("/missions/{mission_id}/decisions")
+def mcas_decide(mission_id: str, body: dict[str, Any] = Body(...), user: OptionalUser = None,
+                container: ContainerDep = None) -> dict[str, Any]:
+    """Apply the player's response and advance to the next decision or mission completion."""
+    return container.simulation_v4.decide_mcas(user, mission_id, body)
+
+
+@router.get("/missions/{mission_id}/debrief")
+def mcas_debrief(mission_id: str, user: OptionalUser, container: ContainerDep) -> dict[str, Any]:
+    """Return the completed mission's explainable debrief and score."""
+    return container.simulation_v4.mcas_debrief(user, mission_id)

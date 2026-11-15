@@ -63,6 +63,26 @@ CREATE TABLE IF NOT EXISTS simulation_runs (   -- real-data engine (engine_v4); 
     result_json              TEXT NOT NULL,   -- the full engine result
     created_at               TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS simulation_mcas_runs (
+    id              TEXT PRIMARY KEY,
+    user_id         TEXT REFERENCES users(id) ON DELETE CASCADE,  -- NULL = guest run
+    name            TEXT,
+    scenario_id     TEXT NOT NULL,
+    engine_version  TEXT NOT NULL,
+    seed            INTEGER NOT NULL,
+    feasibility     TEXT NOT NULL,
+    status          TEXT NOT NULL,
+    state_json      TEXT NOT NULL,   -- resumable MCAS state, including configuration and decisions
+    debrief_json    TEXT,
+    outcome         TEXT,
+    score_total     REAL,
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL,
+    completed_at    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_simulation_mcas_user ON simulation_mcas_runs(user_id, created_at);
+
 CREATE INDEX IF NOT EXISTS idx_simulation_runs_user ON simulation_runs(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_missions_user ON missions(user_id, updated_at);
 CREATE INDEX IF NOT EXISTS idx_runs_user ON runs(user_id, created_at);
