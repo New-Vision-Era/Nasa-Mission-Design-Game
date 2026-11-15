@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#06101d">
+  <title>Mission Design | Spacecraft Workshop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Mission Design home">
+      <span class="brand-mark">✦</span>
+      <span>MISSION<span class="brand-light"> DESIGN</span></span>
+    </a>
+    <div class="top-meta"><span class="live-dot"></span> SPACE SYSTEMS LAB <span class="meta-divider">/</span> 01</div>
+  </header>
+
+  <main>
+    <section id="design-home" class="screen active" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-line"></span> MISSION PREPARATION <span class="eyebrow-index">PHASE 01</span></div>
+        <h1 id="hero-title">Build your<br><span>spacecraft.</span></h1>
+        <p class="hero-description">Every mission starts with a design. Select your spacecraft platform, assemble the right systems, and prepare your vehicle for the challenges ahead.</p>
+        <div class="hero-actions">
+          <button id="enter-workshop" class="primary-button" type="button">
+            <span>ENTER SPACECRAFT WORKSHOP</span><span class="button-arrow">↗</span>
+          </button>
+          <span class="action-hint">3D DESIGN ENVIRONMENT <span>·</span> INTERACTIVE</span>
+        </div>
+        <div class="feature-row">
+          <div class="feature"><span class="feature-number">01</span><span>Choose a platform</span></div>
+          <div class="feature"><span class="feature-number">02</span><span>Install equipment</span></div>
+          <div class="feature"><span class="feature-number">03</span><span>Check your systems</span></div>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="Spacecraft illustration">
+        <div class="visual-orbit orbit-a"></div>
+        <div class="visual-orbit orbit-b"></div>
+        <div class="visual-cross cross-a"></div>
+        <div class="visual-cross cross-b"></div>
+        <div class="visual-label label-top"><span>VEHICLE CONFIGURATION</span><b>SYS. 001</b></div>
+        <div class="satellite-art">
+          <div class="solar-panel solar-left"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="satellite-body">
+            <div class="body-top"></div><div class="body-window"></div><div class="body-line"></div>
+            <div class="body-bottom"></div>
+          </div>
+          <div class="solar-panel solar-right"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="antenna"></div>
+        </div>
+        <div class="visual-label label-bottom"><span>DESIGN STATUS</span><b><span class="live-dot"></span> AWAITING INPUT</b></div>
+        <div class="visual-coordinates">34° 44' N&nbsp;&nbsp; 10° 45' E<br>EARTH ORBITAL SYSTEM</div>
+      </div>
+    </section>
+
+    <section id="game-screen" class="screen game-screen" aria-label="3D spacecraft game">
+      <div class="game-toolbar">
+        <div><span class="live-dot"></span><span class="toolbar-title">SPACECRAFT WORKSHOP</span><span class="toolbar-subtitle">/ 3D ENVIRONMENT</span></div>
+        <button id="back-to-design" class="back-button" type="button"><span>←</span> BACK TO DESIGN HOME</button>
+      </div>
+      <div class="game-frame-wrap">
+        <iframe id="godot-game" title="Space Mission Design game" src="about:blank" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>SPACE MISSION DESIGN SIMULATOR</span>
+    <span>ENGINEERING THE NEXT FRONTIER <b>✦</b></span>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>
