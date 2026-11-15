@@ -19,15 +19,16 @@ SUCCESS, PARTIAL_SUCCESS, FAILURE = "SUCCESS", "PARTIAL_SUCCESS", "FAILURE"
 
 def simulate_mission(sel: Selection, params: ScenarioParams, evaluation: dict, performance: dict,
                      seed: int) -> dict[str, Any]:
-    """Whole mission in one call, no player decisions (the non-interactive v4 contract).
+    """Whole mission in one call, with MCAS MVP scope and default player responses.
 
-    Runs through MCAS with the four original event types and each anomaly's default response,
-    which reproduces the original v4 behaviour exactly.
+    The quick and interactive modes use the same anomaly catalogue and period arithmetic.
+    This mode resolves every decision using its declared default response, so a quick run
+    and an interactive run in which the player always chooses the default remain comparable.
     """
     ctx = RunContext(cfg=None, scenario_id="", mission_type=anomaly_catalog.EARTH_OBSERVATION, sel=sel,
                      params=params, evaluation=evaluation, performance=performance, seed=seed)
-    progress = state_manager.advance(ctx, scope=anomaly_catalog.SCOPE_LEGACY, interactive=False)
-    return build_mission(ctx, progress, legacy_shape=True)
+    progress = state_manager.advance(ctx, scope=anomaly_catalog.SCOPE_MVP, interactive=False)
+    return build_mission(ctx, progress, legacy_shape=False)
 
 
 def _count(value: float):

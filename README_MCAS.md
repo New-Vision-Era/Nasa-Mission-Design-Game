@@ -12,14 +12,17 @@ landing are declared in the catalogue as **not implemented** and are refused, no
 | Existing module | Before | Now |
 | --- | --- | --- |
 | `mission/events.py` | Seeded generation and resolution of four event types | Unchanged. MCAS reuses `generate_events` for external events, so seeds give the same events as before |
-| `mission/operations.py` | `simulate_mission` flew every period in one loop | `simulate_mission` runs through MCAS with the four original events and default responses. `build_mission` builds the result from an MCAS run |
+| `mission/operations.py` | `simulate_mission` flew every period in one loop | `simulate_mission` runs through the full MCAS MVP scope (four seeded external events plus deterministic data-backlog and pointing anomalies), applying each declared default response. `build_mission` returns the anomaly records and expanded timeline |
 | `configuration.py` | `Scenario(id, name, briefing, params)` | `Scenario.mission_type` added (default `earth_observation`) |
 | `api.py` | run, recommend, catalog handlers | Four handlers added: evaluate, start, decision, debrief |
 | `evaluation.py`, `constraints/`, `scoring.py`, `performance.py`, `results.py`, `engine.py` | | Not touched |
 
-`run_simulation()` returns the same result as before. This was checked two ways: the 93 existing
-tests pass, and the original `simulate_mission` was compared with the new one on 5,440 runs
-(34 designs x 4 parameter sets x 40 seeds) with byte-identical JSON.
+`run_simulation()` now includes the two design-caused anomalies (`data_backlog` and
+`pointing_instability`) as well as the four seeded event types. Scores can therefore change for
+designs with a data-rate/downlink imbalance or a pointing warning. Quick mode resolves all
+anomalies with their declared default responses; an interactive run that selects those same
+defaults is expected to produce the same mission outcome and score. A regression test checks this
+for a design that triggers both design-caused anomalies.
 
 ## New files
 
@@ -140,18 +143,26 @@ All are labelled `gameplay_assumption` in the catalogue and listed in the debrie
 
 Event probabilities are still the ones in the scenario file. No new probability was added.
 
-## Needs team approval
+## Team decisions recorded
 
-1. **One-call and step-by-step results can differ.** `run_simulation()` keeps the original four
-   events only. The step-by-step run also applies `data_backlog` choices and `pointing_instability`
-   (which lowers observation even with the default response). Decide whether `run_simulation()`
-   should use the full MVP scope; that would change scores for designs with a pointing warning.
-2. Adding operational availability to the reliability category.
-3. The five gameplay rules above.
-4. Wiring into the backend: the backend's four functions take `Design`, `Scenario`, `Catalog` and
-   `RunState` objects; these take a v4 configuration dict and a JSON state. `engine_adapter.py`
-   needs a translation, and `pending_event {event_id, options[]}` maps to
-   `pending_decision {anomaly_id, responses[]}`.
+The Science & Simulation team selected the following:
+
+1. **1B — Use the full MCAS MVP scope in both modes.** The quick one-call simulation now includes
+   the two deterministic design-caused anomalies, `data_backlog` and `pointing_instability`,
+   alongside the four seeded external event types. Quick mode applies each anomaly's declared
+   default response. Existing scores can change for designs with a data-rate/downlink imbalance or
+   a pointing warning. The quick result now includes anomaly records and the expanded mission timeline.
+2. **2A — Accept all five gameplay assumptions unchanged.** The recovery fraction remains `0.5`;
+   the five rules remain labelled `gameplay_assumption` in the anomaly catalogue and debrief.
+3. **3A — Keep operational availability out of reliability scoring.** Availability remains visible
+   in the debrief only. The 35 / 25 / 20 / 20 score weights and reliability calculation are unchanged.
+
+A regression test compares a quick run with an interactive run in which every decision uses its
+default response. It also verifies that both design-caused anomalies are included in the quick run.
+
+Backend integration still translates the engine's v4 configuration dict and JSON mission state
+through the backend adapter; `pending_event {event_id, options[]}` maps to
+`pending_decision {anomaly_id, responses[]}`.
 
 ## Not implemented
 

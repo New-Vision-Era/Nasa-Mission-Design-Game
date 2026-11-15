@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from simulation.engine_v4 import api, run_simulation
+from simulation.engine_v4 import api, interactive, run_simulation
 from simulation.engine_v4.configuration import ConfigError, load_scenario, parse_config, resolve_selection
 from simulation.engine_v4.constraints import launch, mass, orbit, pointing, power, propulsion, volume
 from simulation.engine_v4.data_loader import CATEGORIES, DEFAULT_PATH, Catalog, CatalogError, load_catalog
@@ -640,6 +640,30 @@ def test_weights_are_configurable():
 def test_same_input_and_seed_give_same_output():
     a, b = run(seed=7, data_generation_kbps={"hyperscape100": 2000}), run(seed=7, data_generation_kbps={"hyperscape100": 2000})
     assert json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+
+
+def test_one_call_includes_full_mcas_scope_and_matches_interactive_defaults():
+    params = {
+        "events": {"enabled": False},
+        "data_generation_kbps": {"hyperscape100": 20000},
+    }
+    quick = run(seed=17, **params)
+    anomaly_ids = {record["anomaly_id"] for record in quick["mission"]["anomalies"]}
+    assert "data_backlog" in anomaly_ids
+    assert "pointing_instability" in anomaly_ids
+
+    state = interactive.start_run(config(), seed=17, scenario_parameters=params)
+    guard = 0
+    while state["status"] == "AWAITING_DECISION":
+        pending = state["pending_decision"]
+        default = next(response for response in pending["responses"] if response["is_default"])
+        state = interactive.apply_decision(state, pending["anomaly_id"], default["id"])
+        guard += 1
+        assert guard < 30
+
+    debrief = interactive.build_debrief(state)
+    assert debrief["score"]["total"] == pytest.approx(quick["score"]["total"])
+    assert debrief["mission"]["outcome"] == quick["mission"]["outcome"]
 
 
 def test_events_are_seeded_and_explained(catalog):
