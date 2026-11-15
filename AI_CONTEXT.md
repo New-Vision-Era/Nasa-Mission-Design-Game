@@ -974,11 +974,11 @@ in this repository yet (only API bridge scripts in `frontend/`).
 -   **Engine v4, run and passing:** 96 tests in
     `simulation/engine_v4/tests/test_engine_v4.py`, including the
     framework-free request handlers.
--   **Engine v4 HTTP layer:** `backend/tests/test_simulation_v4_api.py`
-    was written where FastAPI was not installed. Its first real run is
-    the GitHub Actions workflow on this branch; check the workflow
-    result before relying on it.
-
+-   **Engine v4 HTTP layer, run and passing in CI:**
+    `backend/tests/test_simulation_v4_api.py` (13 tests through the real
+    FastAPI app). FastAPI was not installed where it was written, so its
+    first run was GitHub Actions on `feature/engine-v4-integration`:
+    144 passed, none skipped (2026-11-15).
 -   **Run and passing:** 19 tests covering the catalog loader, design
     validation, accounts, saved missions, runs, history, ownership
     rules, and the placeholder engine. These call the service layer
