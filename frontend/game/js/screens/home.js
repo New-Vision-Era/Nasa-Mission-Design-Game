@@ -35,8 +35,8 @@ export function render({ go }) {
     <div class="home-content">
       <div class="home-top">
         <div class="home-brand">
-          <div class="eyebrow">Space Mission Design Game</div>
-          <h1>Mission<br><span>Control</span></h1>
+          <img class="home-icon" src="brand/sq-icon.png" alt="">
+          <img class="home-wordmark" src="brand/starquest-wordmark.png" alt="StarQuest — Earth observation simulation">
           <p>Design it. Launch it. Keep it alive.</p>
         </div>
         <div class="home-icons">
