@@ -46,6 +46,24 @@ CREATE TABLE IF NOT EXISTS runs (
     created_at      TEXT NOT NULL,
     completed_at    TEXT
 );
+CREATE TABLE IF NOT EXISTS simulation_runs (   -- real-data engine (engine_v4); always complete
+    id                       TEXT PRIMARY KEY,
+    user_id                  TEXT REFERENCES users(id) ON DELETE CASCADE,   -- NULL = guest run
+    name                     TEXT,
+    scenario_id              TEXT NOT NULL,
+    dataset_id               TEXT,
+    engine_version           TEXT NOT NULL,
+    seed                     INTEGER NOT NULL,
+    feasibility              TEXT NOT NULL,   -- FEASIBLE or CONDITIONAL (INFEASIBLE cannot launch)
+    outcome                  TEXT NOT NULL,
+    score_total              REAL,
+    uses_parameter_overrides INTEGER NOT NULL DEFAULT 0,   -- always 0: stored runs take no overrides
+    configuration_json       TEXT NOT NULL,
+    scenario_parameters_json TEXT NOT NULL,                -- always "{}"; kept so existing files still work
+    result_json              TEXT NOT NULL,   -- the full engine result
+    created_at               TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_simulation_runs_user ON simulation_runs(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_missions_user ON missions(user_id, updated_at);
 CREATE INDEX IF NOT EXISTS idx_runs_user ON runs(user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_runs_mission ON runs(mission_id, created_at);

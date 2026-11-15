@@ -254,11 +254,27 @@ Scientific credibility is a major differentiator.
     `reviewed`. The API returns it with every catalog response so the UI
     can show a placeholder-data banner.
 
-**CURRENT STATE: every number in `data/` is a mock placeholder
-(`kind: gameplay`, `data_status: mock`). None of it is real spacecraft
-data. The simulation formulas in `simulation/engine.py` are a
-placeholder gameplay model, not physics.** Do not present either as
-real.
+**CURRENT STATE: two data sets and two engines exist side by side.**
+
+-   `data/components/*.json` with `simulation/engine.py` is still the
+    mock placeholder (`kind: gameplay`, `data_status: mock`). None of it
+    is real spacecraft data. Do not present it as real. Saved missions,
+    runs and history use this one.
+-   `data/equipment_v5.json` with `simulation/engine_v4/` uses real,
+    sourced research data (3 platforms, 21 instruments, 17 power, 8
+    communication, 9 propulsion, 7 ADCS, 5 orbits, 7 launch vehicles).
+    It is a simplified game model, not a high-fidelity simulation. Its
+    scenario file `data/scenarios_v4/earth_observation_v4.json` holds
+    only requirements and gameplay assumptions.
+-   Platform bus mass (`bus_mass_kg`, added in dataset v5) is NOT a
+    GITAI value: GSAT-20 20 kg and GSAT-50 50 kg are estimates, GSAT-200
+    300 kg is derived from brochure delta-v figures with an inference.
+    Each has a range (`bus_mass_range_kg`) and is dry (bus propellant not
+    published). Results that use it carry its value kind and range.
+-   `equipment_v5.json` is not in the `data/components/*.json`
+    per-field provenance format. The v4 engine reads it through one
+    loader, `simulation/engine_v4/data_loader.py`. `null` means unknown,
+    never zero.
 
 ### Appropriate scope
 
@@ -460,6 +476,38 @@ space-mission-game/
 | `sessions` | token hash, user id, created_at, expires_at (7 days by default) |
 | `missions` | A saved design owned by one player: name, scenario id, design JSON, timestamps |
 | `runs` | One launched mission: owner (NULL for a guest), optional mission id, seed, catalog version, status, full run state JSON (includes the design flown), debrief JSON, outcome, total score, timestamps |
+| `simulation_runs` | One launched real-data (engine v4) mission, always complete: owner (NULL for a guest), optional name, scenario id, dataset id, engine version, seed, feasibility, outcome, total score, configuration JSON, full result JSON, created_at. (`uses_parameter_overrides` and `scenario_parameters_json` are kept but always 0 and `{}`) |
+
+### Real-data engine (`simulation/engine_v4/`, implemented)
+
+``` text
+simulation/engine_v4/
+├── data_loader.py        # loads and indexes equipment_v5.json; null stays None
+├── configuration.py      # MissionConfig, ScenarioParams, selection rules
+├── results.py            # ConstraintResult, statuses, overall feasibility
+├── evaluation.py         # runs every engineering check
+├── constraints/          # mass, volume, power, communications, orbit, pointing, propulsion, launch
+├── mission/              # performance (science rules), scoring, events, operations
+├── optimizer/recommend.py# bounded candidates + Pareto filter
+├── engine.py             # run_simulation(config, scenario_parameters, seed)
+├── api.py                # framework-free request handlers
+├── devui.py, devui.html  # developer test page
+├── examples/             # example request bodies
+└── tests/test_engine_v4.py
+backend/app/api/simulation_v4.py      # thin router, registered in main.py
+backend/tests/test_simulation_v4_api.py
+frontend/engine-v4-api.js             # window.EngineV4API bridge
+frontend/ENGINE_V4_INTEGRATION.md
+data/equipment_v5.json, data/scenarios_v4/
+```
+
+It is additive, like the Mars rover API: no existing route, model or
+existing table changed. It is NOT behind the four-function interface
+below: it runs a whole mission in one call and has no player decisions
+during operations. Its launched runs are stored in their own table,
+`simulation_runs`, through
+`backend/app/services/simulation_v4_service.py` (the only backend file
+that calls the v4 engine).
 
 ### Simulation engine interface
 
@@ -628,6 +676,31 @@ Every error has the same body:
 | 422 | `invalid_request` | The body does not match the schema |
 | 422 | `unknown_component` | An id is not in the catalog, is in the wrong slot, or is not allowed in the scenario |
 | 500 | `internal_error` | Anything unexpected; details only in the server log |
+
+### Real-data simulation endpoints (implemented, under `/api/v1/simulation`)
+
+| Method and path | Purpose |
+| --- | --- |
+| `GET /simulation/catalog` | The v4 catalog with all original fields, sources and caveats |
+| `GET /simulation/scenarios` | Scenario briefing and default parameters (gameplay assumptions) |
+| `POST /simulation/run` | `{configuration, scenario_parameters?, seed?}` in; feasibility, constraints, score, mission, debrief out |
+| `POST /simulation/recommend` | Same body; up to five non-dominated alternatives |
+| `POST /simulation/runs` | Launch and store: `{configuration, seed?, name?}`. Always uses the scenario's own parameters (`scenario_parameters` → 422). Login optional, same guest rules as `/runs`. `409 not_launchable` (with `result`) if a hard constraint fails |
+| `GET /simulation/runs` | Login required. The player's stored real-data runs, newest first |
+| `GET /simulation/runs/{run_id}` | Owner (or anyone for a guest run). `{run_id, name, created_at, status, result}` |
+| `GET /simulation/testbench` | Developer test page, not the game UI |
+
+The v4 configuration differs from the mock `Design`: it is flat (no
+`spacecraft` object), `communication_system_ids` is a list, and `power`
+is `{mode, solar_array_ids, battery_ids, eps_id}` with `mode` =
+`platform_payload_budget` (default) or `player_built_power_system`.
+
+v4 constraint statuses are upper-case `PASS`, `FAIL`, `NOT_EVALUATED`,
+`WARNING`. Overall feasibility is `FEASIBLE`, `INFEASIBLE` or
+`CONDITIONAL` (no hard failure, but a hard constraint could not be
+evaluated from real data). Outcomes are `SUCCESS`, `PARTIAL_SUCCESS`,
+`FAILURE`. Full examples: `frontend/ENGINE_V4_INTEGRATION.md` and
+`simulation/engine_v4/README.md`.
 
 ### Contract rules
 
@@ -881,8 +954,11 @@ demonstrate.
 
 ## 13. Project status --- update this section continuously
 
-**Status (2026-11-14):** Backend first version written. Frontend not
-started in this repository. Simulation and data are placeholders.
+**Status (2026-11-15):** Backend first version written. Real-data
+engine v4 integrated into the backend as additive endpoints, including
+stored runs and per-player history. Saved designs (`/missions`) and the
+`/runs` routes still use the placeholder engine and mock data. No game UI
+in this repository yet (only API bridge scripts in `frontend/`).
 
 ### Implemented
 
@@ -897,8 +973,28 @@ started in this repository. Simulation and data are placeholders.
 -   Mock catalog: 1 scenario, 18 components, 2 events.
 -   Fixtures generated from the real code path.
 
+-   Real-data engine v4: loader for all 8 categories; constraints for
+    payload mass, payload volume, power (two explicit modes), command
+    uplink, ground-station compatibility, downlink capacity, data
+    balance, pointing, delta-v and burn time, launcher orbit support,
+    launch mass and budget; score out of 100; six-stage deterministic
+    mission with four seeded gameplay events; Pareto recommendations.
+-   `/simulation/catalog`, `/simulation/scenarios`, `/simulation/run`,
+    `/simulation/recommend`, `/simulation/testbench`.
+-   Stored real-data runs: `POST /simulation/runs`,
+    `GET /simulation/runs`, `GET /simulation/runs/{run_id}`, with the
+    same ownership and guest rules as the placeholder runs.
+
 ### Test status (be honest about this)
 
+-   **Engine v4, run and passing:** 96 tests in
+    `simulation/engine_v4/tests/test_engine_v4.py`, including the
+    framework-free request handlers.
+-   **Engine v4 HTTP layer, run and passing in CI:**
+    `backend/tests/test_simulation_v4_api.py` (13 tests through the real
+    FastAPI app). FastAPI was not installed where it was written, so its
+    first run was GitHub Actions on `feature/engine-v4-integration`:
+    144 passed, none skipped (2026-11-15).
 -   **Run and passing:** 19 tests covering the catalog loader, design
     validation, accounts, saved missions, runs, history, ownership
     rules, and the placeholder engine. These call the service layer
@@ -918,6 +1014,13 @@ started in this repository. Simulation and data are placeholders.
 -   "Experimental launch" of a design that fails a hard constraint.
 -   Login rate limiting, password reset, email.
 -   Deployment.
+
+-   v4 engine behind the four-function interface. v4 runs and
+    placeholder runs are stored and listed separately.
+-   Saved designs (`/missions`) for a v4 configuration.
+-   Player decisions during v4 operations.
+-   Onboard storage limits, real reliability data, orbital lifetime,
+    rocket-equation delta-v.
 
 ### Checklist
 
@@ -968,6 +1071,18 @@ Add a new entry whenever a major decision is made.
 | 2026-11-14 | Accounts use username + password with scrypt and opaque session tokens, standard library only | No extra dependency; no email collected | Backend |
 | 2026-11-14 | Guests can still evaluate and launch; only saving and history need login | The MVP acceptance test must not depend on the login screens | Frontend, backend |
 | 2026-11-14 | Storage is SQLite from the start; the earlier "in-memory first" plan was dropped | Accounts and history need durable storage; tests use an in-memory SQLite database | Backend |
+| 2026-11-15 | Real-data engine added as `simulation/engine_v4/` with additive `/simulation/*` endpoints, beside the placeholder | Makes the real engine usable now without changing the shared `models.py`, `engine.py`, stored runs or the mock contract | Simulation, backend, frontend |
+| 2026-11-15 | Default power mode is `platform_payload_budget`; `player_built_power_system` is selectable per design | Whether GSAT platforms include power hardware is unknown; the mode is explicit, never silent | Simulation, game rules |
+| 2026-11-15 | A hard constraint that cannot be evaluated makes a design `CONDITIONAL`, never a pass | Unknown must not count as zero or as success | Simulation, frontend |
+| 2026-11-15 | Total spacecraft mass needs `bus_mass_kg_assumption` in the scenario; it ships as `null` | Bus mass is unpublished; without it launch mass, rideshare price and delta-v are `NOT_EVALUATED` | Scenarios, game rules |
+| 2026-11-15 | The v4 budget check covers platform plus launch only | Almost all component prices are unpublished and are not counted as zero | Scoring, scenarios |
+| 2026-11-15 | v4 runs stored in a new `simulation_runs` table with their own routes, instead of reusing `runs` and `RunState` | The v4 result has a different shape and no pending decisions; a separate table leaves `models.py`, `RunState` and existing history untouched, and needs no database reset | Backend, database, frontend |
+| 2026-11-15 | A v4 design that fails a hard constraint cannot launch (`409 not_launchable`); a `CONDITIONAL` design launches and is flagged | Same rule as the placeholder runs; whether `CONDITIONAL` may launch is still a team decision | Game rules |
+| 2026-11-15 | Stored v4 runs accept scenario parameter overrides and record `uses_parameter_overrides` | A gameplay bus mass was only available as an override. **Superseded the same day** (see below) | Backend, game rules |
+| 2026-11-15 | Dataset v5 adopted: engine reads `data/equipment_v5.json` (v4 file removed; only platform bus-mass fields changed) | Research filled `bus_mass_kg` for every platform, so launch mass, rideshare price and delta-v are now evaluated from data | Data, simulation |
+| 2026-11-15 | Launch mass is judged at the stated bus mass; if the top of `bus_mass_range_kg` would exceed capacity the check is a `WARNING` | Bus masses are estimates; the margin must not look certain | Simulation, game rules |
+| 2026-11-15 | Stored runs (`POST /simulation/runs`) no longer accept `scenario_parameters` (422); the stateless `/simulation/run` stays the sandbox | Bus mass now comes from data, so overrides are no longer needed and a player cannot give themselves a bigger budget | Backend, frontend, game rules |
+| 2026-11-15 | Recommendations list only `FEASIBLE` designs; `CONDITIONAL` ones are returned separately | With real bus mass most designs are verifiable; an unverifiable launcher must not win because it cannot be checked | Simulation |
 
 ### Current blockers
 
@@ -985,6 +1100,15 @@ Add a new entry whenever a major decision is made.
 5.  Pair 2: build against `data/fixtures/`, then the live API; add
     login, register and history screens.
 6.  Decide where the demo runs.
+7.  Whole team: decide the open v4 questions: may `CONDITIONAL` designs
+    launch; count subsystems against platform payload mass and power;
+    check volume for instruments only; which contract the new UI builds
+    against (mock `Design` or v4 configuration).
+8.  Person 1: if GITAI confirms a bus mass or the GSAT-200 price
+    (3.0M vs 3.5M USD), update `data/equipment_v5.json` only; no code
+    change is needed.
+9.  Pair 3: if the new UI adopts the v4 configuration, add saved designs
+    for it and decide whether to merge the two history lists.
 
 ------------------------------------------------------------------------
 

@@ -1,0 +1,2322 @@
+{
+  "dataset_id": "equipment_v5",
+  "status": "v5 adds estimated bus masses for the three GSAT platforms; nothing else changed",
+  "retrieved_on": "2026-11-14",
+  "reference_altitude_km": 500,
+  "constants": {
+    "g0_m_s2": 9.80665,
+    "mu_earth_km3_s2": 398600.4418,
+    "earth_mean_radius_km": 6371.0,
+    "earth_equatorial_radius_km": 6378.137,
+    "j2": 0.00108263
+  },
+  "units": {
+    "price_usd": "US dollars",
+    "*_kg": "kilograms",
+    "*_w": "watts",
+    "energy_wh": "watt-hours",
+    "*_mm / dimensions_mm": "millimetres [x, y, z]",
+    "gsd_m": "metres per pixel at 500 km",
+    "swath_km": "km at 500 km",
+    "*_kbps": "kilobits per second",
+    "frequency_mhz": "megahertz [min, max]",
+    "thrust_n": "newtons",
+    "isp_s": "seconds",
+    "total_impulse_ns": "newton-seconds",
+    "pointing_accuracy_deg": "degrees",
+    "altitude_km": "km",
+    "inclination_deg": "degrees",
+    "period_min": "minutes",
+    "*_km_s": "km per second",
+    "max_eclipse_fraction": "0-1 share of an orbit in Earth shadow",
+    "trl": "1-9"
+  },
+  "platforms": [
+    {
+      "id": "gsat_20",
+      "name": "GSAT-20",
+      "manufacturer": "GITAI",
+      "category": "small",
+      "price_usd": 1000000,
+      "price_type": "published",
+      "payload_mass_capacity_kg": 5,
+      "payload_average_power_w": 100,
+      "payload_volume_mm": [
+        200,
+        200,
+        200
+      ],
+      "bus_mass_kg": 20,
+      "design_lifetime_years": null,
+      "source_urls": [
+        "https://gitai.tech/satbus/"
+      ],
+      "includes_power_hardware": null,
+      "includes_comms_adcs_hardware": null,
+      "ownership_note": "Unknown whether the GSAT price and payload_average_power_w include the bus's own solar arrays, batteries, radios and ADCS. null = unresolved, not false.",
+      "bus_mass_range_kg": [
+        15,
+        22
+      ],
+      "bus_mass_basis": "estimate",
+      "bus_mass_method": "GITAI states its bus products range from 20 kg to 300 kg; GSAT-20 is the smallest model, so its bus is placed at the bottom of that range. Gives a 25 kg satellite with a 20% payload fraction, typical of a 16U-class spacecraft (GITAI's own SC1 was a 16U).",
+      "bus_mass_sources": [
+        "https://gitai.tech/spacecraft-components/"
+      ],
+      "bus_mass_note": "bus_mass_kg is the platform without payload, dry (no propellant data published). It is NOT a GITAI-published value: see bus_mass_basis and bus_mass_method. Use bus_mass_range_kg for sensitivity checks."
+    },
+    {
+      "id": "gsat_50",
+      "name": "GSAT-50",
+      "manufacturer": "GITAI",
+      "category": "medium",
+      "price_usd": 1500000,
+      "price_type": "published",
+      "payload_mass_capacity_kg": 10,
+      "payload_average_power_w": 150,
+      "payload_volume_mm": [
+        500,
+        500,
+        300
+      ],
+      "bus_mass_kg": 50,
+      "design_lifetime_years": null,
+      "source_urls": [
+        "https://gitai.tech/satbus/"
+      ],
+      "includes_power_hardware": null,
+      "includes_comms_adcs_hardware": null,
+      "ownership_note": "Unknown whether the GSAT price and payload_average_power_w include the bus's own solar arrays, batteries, radios and ADCS. null = unresolved, not false.",
+      "bus_mass_range_kg": [
+        40,
+        60
+      ],
+      "bus_mass_basis": "estimate",
+      "bus_mass_method": "Not published. Estimated between the two ends of GITAI's 20-300 kg range, assuming a payload fraction near 17% (10 kg payload, 60 kg satellite), in line with small buses such as SSTL-100 (15 kg payload on a 100 kg satellite).",
+      "bus_mass_sources": [
+        "https://gitai.tech/spacecraft-components/",
+        "https://en.wikipedia.org/wiki/Comparison_of_satellite_buses"
+      ],
+      "bus_mass_note": "bus_mass_kg is the platform without payload, dry (no propellant data published). It is NOT a GITAI-published value: see bus_mass_basis and bus_mass_method. Use bus_mass_range_kg for sensitivity checks."
+    },
+    {
+      "id": "gsat_200",
+      "name": "GSAT-200",
+      "manufacturer": "GITAI",
+      "category": "large",
+      "price_usd": 3000000,
+      "price_type": "published",
+      "payload_mass_capacity_kg": 200,
+      "payload_average_power_w": 1000,
+      "payload_volume_mm": [
+        1000,
+        1000,
+        700
+      ],
+      "bus_mass_kg": 300,
+      "design_lifetime_years": null,
+      "source_urls": [
+        "https://gitai.tech/satbus/",
+        "https://gitai.tech/wp-content/uploads/2025/10/GITAI_satellite_brochure.pdf"
+      ],
+      "includes_power_hardware": null,
+      "includes_comms_adcs_hardware": null,
+      "ownership_note": "Unknown whether the GSAT price and payload_average_power_w include the bus's own solar arrays, batteries, radios and ADCS. null = unresolved, not false.",
+      "bus_mass_range_kg": [
+        250,
+        300
+      ],
+      "bus_mass_basis": "derived",
+      "bus_mass_method": "The 2025 brochure gives GSAT-200 '200 m/s with 200 kg payload', and GITAI's propulsion module '200 m/s for a 500 kg dry-mass satellite'. If the same module is used, dry satellite = 500 kg, so bus = 500 - 200 = 300 kg. This matches the top of GITAI's stated 20-300 kg bus range and NASA-era small buses (150-300 kg bus for 100-300 kg payload). Derived from published figures, but the 'same propulsion module' step is an inference.",
+      "bus_mass_sources": [
+        "https://gitai.tech/wp-content/uploads/2025/10/GITAI_satellite_brochure.pdf",
+        "https://gitai.tech/spacecraft-components/",
+        "https://www.nationalacademies.org/read/9819/chapter/6",
+        "https://www.moog.com/content/dam/moog/literature/sdg/space/space-vehicles/moog-meteorite-datasheet.pdf"
+      ],
+      "bus_mass_note": "bus_mass_kg is the platform without payload, dry (no propellant data published). It is NOT a GITAI-published value: see bus_mass_basis and bus_mass_method. Use bus_mass_range_kg for sensitivity checks.",
+      "price_note": "The 2025 GITAI brochure lists GSAT-200 at 3.5 million USD with a 12-month lead time; the product web page lists 3,000,000 USD. price_usd keeps the web-page value; confirm with GITAI."
+    }
+  ],
+  "instrument_families": {
+    "optical_rgb": [
+      "c3d",
+      "triscape50",
+      "gecko",
+      "triscape100"
+    ],
+    "optical_multispectral": [
+      "mantis",
+      "multiscape100_cis",
+      "caiman",
+      "chameleon",
+      "komodo",
+      "multiscape200_cis",
+      "dragoneye",
+      "raptor"
+    ],
+    "optical_hyperspectral": [
+      "hyperscape100",
+      "hyperscout_1",
+      "hyperscout_2"
+    ],
+    "infrared": [
+      "argus_1000",
+      "argus_2000",
+      "chameleon_swir"
+    ],
+    "microwave_radiometer": [
+      "tempest_d_radiometer",
+      "tropics_tms"
+    ],
+    "radar": [
+      "raincube_radar"
+    ]
+  },
+  "instruments": [
+    {
+      "id": "c3d",
+      "name": "C3D CubeSat Camera",
+      "manufacturer": "XCAM",
+      "family": "optical_rgb",
+      "instrument_type": "optical_rgb_low_resolution",
+      "price_usd": null,
+      "price_type": "published_range",
+      "price_published": {
+        "min": 11900,
+        "max": 27400,
+        "currency": "USD",
+        "fiscal_year": 2022
+      },
+      "mass_kg": 0.085,
+      "power_operating_w": 0.845,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "gsd_m": null,
+      "swath_km": null,
+      "spectral_bands": "RGB colour or black and white",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": null,
+        "gsat_50": null,
+        "gsat_200": null
+      },
+      "value_notes": "Very small, low-cost camera with up to three camera heads. Published price is a RANGE in USD for fiscal year 2022, so price_usd is left null and the range is in price_published. GSD and swath are not published (they depend on the lens chosen), so its science performance cannot be computed from real data.",
+      "source_urls": [
+        "https://www.satcatalog.com/component/c3d-cubesat-camera/"
+      ]
+    },
+    {
+      "id": "triscape50",
+      "name": "TriScape50",
+      "manufacturer": "Simera Sense",
+      "family": "optical_rgb",
+      "instrument_type": "optical_rgb",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 0.37,
+      "power_operating_w": 7,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "gsd_m": 29.3,
+      "swath_km": 120,
+      "spectral_bands": "RGB (snapshot / video)",
+      "onboard_storage_gb": 128,
+      "data_rate_kbps": null,
+      "trl": null,
+      "platform_fit": {
+        "gsat_20": null,
+        "gsat_50": null,
+        "gsat_200": null
+      },
+      "value_notes": "Wide-area, coarse-resolution RGB camera. Values from a third-party catalog (SatNow). Dimensions and TRL not retrieved.",
+      "source_urls": [
+        "https://satnow.com/products/satellite-cameras/simera-sense/113-1295-triscape50"
+      ]
+    },
+    {
+      "id": "gecko",
+      "name": "Gecko Imager",
+      "manufacturer": "Dragonfly Aerospace",
+      "family": "optical_rgb",
+      "instrument_type": "optical_rgb",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 0.5,
+      "power_operating_w": 6,
+      "power_standby_w": 4,
+      "dimensions_mm": [
+        65,
+        90,
+        105
+      ],
+      "gsd_m": 39,
+      "swath_km": 80,
+      "spectral_bands": "RGB (Bayer)",
+      "onboard_storage_gb": 128,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": true,
+        "gsat_50": true,
+        "gsat_200": true
+      },
+      "value_notes": "Mass and power are published as upper bounds (<0.5 kg, <6 W imaging, <4 W readout). A wide-swath variant gives 160 km swath at <7 W.",
+      "source_urls": [
+        "https://dragonflyaerospace.com/products/gecko/"
+      ]
+    },
+    {
+      "id": "triscape100",
+      "name": "TriScape100",
+      "manufacturer": "Simera Sense",
+      "family": "optical_rgb",
+      "instrument_type": "optical_rgb",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 1.1,
+      "power_operating_w": 6.0,
+      "power_standby_w": null,
+      "dimensions_mm": [
+        98,
+        98,
+        176
+      ],
+      "gsd_m": 4.75,
+      "swath_km": 19.4,
+      "spectral_bands": "RGB (Bayer), snapshot, up to 150 frames per second",
+      "onboard_storage_gb": 128,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": true,
+        "gsat_50": true,
+        "gsat_200": true
+      },
+      "value_notes": "Mass is 1.1 kg +/-5% (satsearch). Power 6.0 W is a third-party catalog 'average power' (satcatalog). Snapshot frame is 19.4 x 14.5 km at 500 km.",
+      "source_urls": [
+        "https://satsearch.co/products/simera-sense-triscape100",
+        "https://satcatalog.com/component/triscape100"
+      ]
+    },
+    {
+      "id": "mantis",
+      "name": "Mantis Imager",
+      "manufacturer": "Dragonfly Aerospace",
+      "family": "optical_multispectral",
+      "instrument_type": "optical_multispectral_hyperspectral",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 0.5,
+      "power_operating_w": 6,
+      "power_standby_w": null,
+      "dimensions_mm": [
+        65,
+        90,
+        107
+      ],
+      "gsd_m": 16,
+      "swath_km": 32,
+      "spectral_bands": "RGB, or 6 multispectral bands, or hyperspectral (configuration dependent)",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": true,
+        "gsat_50": true,
+        "gsat_200": true
+      },
+      "value_notes": "16 m GSD is RGB / panchromatic; multispectral is 32 m. Power 6 W is a third-party catalog 'average power'. Sources disagree on the hyperspectral band count (96 or 150).",
+      "source_urls": [
+        "https://www.satcatalog.com/component/mantis-imager/",
+        "https://dragonflyaerospace.com/satellite-cameras/"
+      ]
+    },
+    {
+      "id": "multiscape100_cis",
+      "name": "MultiScape100 CIS",
+      "manufacturer": "Simera Sense",
+      "family": "optical_multispectral",
+      "instrument_type": "optical_multispectral",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 1.2,
+      "power_operating_w": 5.8,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "gsd_m": 4.75,
+      "swath_km": 19.4,
+      "spectral_bands": "7 VNIR bands (push-broom, digital TDI)",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": null,
+      "platform_fit": {
+        "gsat_20": null,
+        "gsat_50": null,
+        "gsat_200": null
+      },
+      "value_notes": "Mass and power come from a third-party catalog (satcatalog), not the manufacturer datasheet. Dimensions not confirmed, so platform fit is left null; on mass and power alone it fits all three platforms. Flown on ESA's Phi-sat-2 in an 8-band configuration.",
+      "source_urls": [
+        "https://www.satcatalog.com/component/multiscape100-cis/",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC10346788/table/sensors-23-06192-t003"
+      ]
+    },
+    {
+      "id": "caiman",
+      "name": "Caiman Imager",
+      "manufacturer": "Dragonfly Aerospace",
+      "family": "optical_multispectral",
+      "instrument_type": "optical_multispectral",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 1.4,
+      "power_operating_w": 10,
+      "power_standby_w": null,
+      "dimensions_mm": [
+        100,
+        100,
+        250
+      ],
+      "gsd_m": 3.25,
+      "swath_km": 13,
+      "spectral_bands": "RGB, or panchromatic + 11 multispectral bands",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": null,
+      "platform_fit": {
+        "gsat_20": false,
+        "gsat_50": true,
+        "gsat_200": true
+      },
+      "value_notes": "3.25 m GSD is RGB / panchromatic; multispectral is 6.5 m. Power 10 W is a third-party catalog 'average power'. Flight heritage from 2023; no TRL number published.",
+      "source_urls": [
+        "https://www.satcatalog.com/component/caiman-imager/",
+        "https://dragonflyaerospace.com/satellite-cameras/"
+      ]
+    },
+    {
+      "id": "chameleon",
+      "name": "Chameleon Imager",
+      "manufacturer": "Dragonfly Aerospace",
+      "family": "optical_multispectral",
+      "instrument_type": "optical_multispectral_hyperspectral",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 1.6,
+      "power_operating_w": 10,
+      "power_standby_w": null,
+      "dimensions_mm": [
+        100,
+        100,
+        215
+      ],
+      "gsd_m": 10,
+      "swath_km": 39,
+      "spectral_bands": "RGB, or 11 multispectral bands, or 150 hyperspectral bands (configuration dependent)",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": false,
+        "gsat_50": true,
+        "gsat_200": true
+      },
+      "value_notes": "Power (10 W) is a third-party catalog 'average power' figure; a 2019 brochure for an earlier version states <7 W imaging and <5 W readout. 10 m GSD / 39 km swath is the RGB mode; multispectral mode is PAN 10 m / MS 20 m over a 20 km swath. GSAT-20 fails on volume only (215 mm length vs 200 mm).",
+      "source_urls": [
+        "https://dragonflyaerospace.com/satellite-cameras/",
+        "https://satcatalog.com/component/chameleon-imager"
+      ]
+    },
+    {
+      "id": "komodo",
+      "name": "Komodo Imager",
+      "manufacturer": "Dragonfly Aerospace",
+      "family": "optical_multispectral",
+      "instrument_type": "optical_multispectral_high_resolution",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 12,
+      "power_operating_w": 45,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "gsd_m": 1.5,
+      "swath_km": 15,
+      "spectral_bands": "RGB, or panchromatic + 11 multispectral bands",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 5,
+      "platform_fit": {
+        "gsat_20": false,
+        "gsat_50": false,
+        "gsat_200": null
+      },
+      "value_notes": "1.5 m GSD is RGB / panchromatic; multispectral is 3 m (binned). Swath 15 km is multispectral mode; RGB snapshot mode is 6.1 km. Power 45 W is a third-party catalog 'average power'. Sources disagree on size (12U or 16U) so dimensions are null. TRL 5: not yet flown, a real schedule/reliability risk.",
+      "source_urls": [
+        "https://satcatalog.com/component/komodo-imager",
+        "https://satsearch.co/products/dragonfly-aerospace-komodo-imager"
+      ]
+    },
+    {
+      "id": "multiscape200_cis",
+      "name": "MultiScape200 CIS",
+      "manufacturer": "Simera Sense",
+      "family": "optical_multispectral",
+      "instrument_type": "optical_multispectral",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 12.1,
+      "power_operating_w": 5.8,
+      "power_standby_w": 2.5,
+      "dimensions_mm": [
+        216,
+        216,
+        304
+      ],
+      "gsd_m": 1.5,
+      "swath_km": 14,
+      "spectral_bands": null,
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": false,
+        "gsat_50": false,
+        "gsat_200": true
+      },
+      "value_notes": "Mass is 12.1 kg +/-2%. VERIFY POWER: the listed 5.8 W / 2.5 W is identical to the much smaller xScape100 line and may be a catalog copy error. Band count was not in the retrieved listing.",
+      "source_urls": [
+        "https://satsearch.co/products/simera-sense-multiscape200-cis"
+      ]
+    },
+    {
+      "id": "dragoneye",
+      "name": "DragonEye Imager",
+      "manufacturer": "Dragonfly Aerospace",
+      "family": "optical_multispectral",
+      "instrument_type": "optical_multispectral_high_resolution",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 18,
+      "power_operating_w": 45,
+      "power_standby_w": 25,
+      "dimensions_mm": [
+        320,
+        320,
+        930
+      ],
+      "gsd_m": 1.4,
+      "swath_km": 22.2,
+      "spectral_bands": "1 panchromatic + 10 multispectral",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": false,
+        "gsat_50": false,
+        "gsat_200": true
+      },
+      "value_notes": "GSD is 1.4 m panchromatic and 2.8 m multispectral (binned). Power figures are upper bounds (<45 W imaging, <25 W readout). Dimensions are a 320 mm diameter x 930 mm length telescope 'plus electronics', so the true envelope is somewhat larger. Two units flew on EOS SAT-1 (2023).",
+      "source_urls": [
+        "https://www.satcatalog.com/component/dragoneye-imager/",
+        "https://www.eoportal.org/satellite-missions/eos-sat-1"
+      ]
+    },
+    {
+      "id": "raptor",
+      "name": "Raptor Imager",
+      "manufacturer": "Dragonfly Aerospace",
+      "family": "optical_multispectral",
+      "instrument_type": "optical_multispectral_very_high_resolution",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 45,
+      "power_operating_w": 45,
+      "power_standby_w": 25,
+      "dimensions_mm": [
+        450,
+        450,
+        900
+      ],
+      "gsd_m": 0.7,
+      "swath_km": 11,
+      "spectral_bands": "Panchromatic + multispectral",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 5,
+      "platform_fit": {
+        "gsat_20": false,
+        "gsat_50": false,
+        "gsat_200": true
+      },
+      "value_notes": "VERIFY: two catalogs disagree. satsearch (2022): 45 kg including electronics, 0.7 m PAN / 2.8 m MS, 11 km swath. satcatalog: 55 kg, 0.5 m, 8 km swath, 2 PAN + 6 MS bands. The satsearch set is used here. Dimensions are a 450 mm diameter x 900 mm length telescope excluding baffle. TRL 5.",
+      "source_urls": [
+        "https://satsearch.co/products/dragonfly-aerospace-raptor-imager",
+        "https://satcatalog.com/component/raptor-imager"
+      ]
+    },
+    {
+      "id": "hyperscape100",
+      "name": "HyperScape100",
+      "manufacturer": "Simera Sense",
+      "family": "optical_hyperspectral",
+      "instrument_type": "optical_hyperspectral",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 1.1,
+      "power_operating_w": 7.0,
+      "power_standby_w": 2.7,
+      "dimensions_mm": [
+        98,
+        98,
+        176
+      ],
+      "gsd_m": 4.75,
+      "swath_km": 19.4,
+      "spectral_bands": "Up to 32 user-selectable bands, 442-884 nm (VNIR)",
+      "onboard_storage_gb": 128,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": true,
+        "gsat_50": true,
+        "gsat_200": true
+      },
+      "value_notes": "Mass is 1.1 kg +/-5%. Sources differ slightly on power: satsearch lists 7.0 W imaging / 2.7 W idle; another catalog lists 5.8 W / 2.5 W; WMO OSCAR lists 1.26 kg and 7.75 W for a flown unit.",
+      "source_urls": [
+        "https://satsearch.co/products/simera-sense-hyperscape100",
+        "https://space.oscar.wmo.int/instruments/view/hyperscape100"
+      ]
+    },
+    {
+      "id": "hyperscout_1",
+      "name": "HyperScout 1",
+      "manufacturer": "cosine Remote Sensing",
+      "family": "optical_hyperspectral",
+      "instrument_type": "optical_hyperspectral_wide_swath",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 1.3,
+      "power_operating_w": 10,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "gsd_m": 70,
+      "swath_km": 200,
+      "spectral_bands": "About 45 bands, 450-950 nm (VNIR)",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": null,
+        "gsat_50": null,
+        "gsat_200": null
+      },
+      "value_notes": "Wide-swath, coarse-resolution hyperspectral imager with on-board processing. GSD and swath are approximate ('~70 m', '~200 km') at 500 km. Volume is 1.5 litres; exact dimensions not retrieved. Mass and power from a manufacturer slide (2020). TRL 9 inferred from flight heritage (2018).",
+      "source_urls": [
+        "https://2020.smallsatshow.com/wp-content/uploads/sites/9/2020/01/cosine.pdf"
+      ]
+    },
+    {
+      "id": "hyperscout_2",
+      "name": "HyperScout 2",
+      "manufacturer": "cosine Remote Sensing",
+      "family": "optical_hyperspectral",
+      "instrument_type": "optical_hyperspectral_plus_thermal",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 1.8,
+      "power_operating_w": 11,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "gsd_m": 75,
+      "swath_km": 280,
+      "spectral_bands": "About 50 VNIR hyperspectral bands + 3 thermal infrared bands (8-14 um)",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": null,
+        "gsat_50": null,
+        "gsat_200": null
+      },
+      "value_notes": "Only instrument here combining hyperspectral and thermal infrared. GSD: 75 m (VNIR) and 390 m (thermal), quoted at 540 km, NOT 500 km. Swath 280 km is at 500 km. Mass 1.8 kg and peak power 11 W from satsearch; a manufacturer slide gives 1.7 kg and 12 W. Volume 1.8 litres; exact dimensions not retrieved. Flown on Phi-sat-1 (2020).",
+      "source_urls": [
+        "https://satsearch.co/products/cosine-hyperscout-2",
+        "https://2020.smallsatshow.com/wp-content/uploads/sites/9/2020/01/cosine.pdf"
+      ]
+    },
+    {
+      "id": "argus_1000",
+      "name": "Argus 1000 Infrared Spectrometer",
+      "manufacturer": "Thoth Technology",
+      "family": "infrared",
+      "instrument_type": "infrared_spectrometer",
+      "price_usd": null,
+      "price_type": "published_other_currency",
+      "price_published": {
+        "min": 23700,
+        "max": 55050,
+        "currency": "EUR"
+      },
+      "mass_kg": 0.23,
+      "power_operating_w": null,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "gsd_m": null,
+      "swath_km": null,
+      "spectral_bands": "About 100 channels, 1000-1700 nm (extended version to 2400 nm)",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": null,
+        "gsat_50": null,
+        "gsat_200": null
+      },
+      "value_notes": "Only instrument here with a published price, and it is in EUR; not converted because no exchange rate was sourced. Mass is published as 'less than 230 g'. Power and dimensions not retrieved. Single-pixel spectrometer (no image), used for greenhouse-gas absorption measurements. TRL 9 is inferred from stated flight heritage (CanX-2, 2008), not a published TRL.",
+      "source_urls": [
+        "https://www.cubesatshop.com/product/argus-1000-infrared-spectrometer/"
+      ]
+    },
+    {
+      "id": "argus_2000",
+      "name": "Argus 2000 Infrared Spectrometer",
+      "manufacturer": "Thoth Technology",
+      "family": "infrared",
+      "instrument_type": "infrared_spectrometer",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 0.28,
+      "power_operating_w": null,
+      "power_standby_w": null,
+      "dimensions_mm": [
+        46,
+        80,
+        80
+      ],
+      "gsd_m": null,
+      "swath_km": null,
+      "spectral_bands": "About 100 channels; versions cover 700-1150, 1000-1650, 1240-2000 or 1730-2200 nm",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": null,
+      "platform_fit": {
+        "gsat_20": null,
+        "gsat_50": null,
+        "gsat_200": null
+      },
+      "value_notes": "Mass is published as '~280 g'. Power not retrieved. Single-pixel spectrometer (no image) with a 0.15 degree field of view. No published price or TRL retrieved.",
+      "source_urls": [
+        "https://manuals.online/thoth-technology/measuring-instrument/argus-2000/user-manual/1v9wc"
+      ]
+    },
+    {
+      "id": "chameleon_swir",
+      "name": "Chameleon SWIR",
+      "manufacturer": "Dragonfly Aerospace",
+      "family": "infrared",
+      "instrument_type": "shortwave_infrared_imager",
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_kg": 1.6,
+      "power_operating_w": 7,
+      "power_standby_w": null,
+      "dimensions_mm": [
+        100,
+        100,
+        215
+      ],
+      "gsd_m": 8.7,
+      "swath_km": 11.2,
+      "spectral_bands": "4 shortwave-infrared bands, 1000-1750 nm",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 6,
+      "platform_fit": {
+        "gsat_20": false,
+        "gsat_50": true,
+        "gsat_200": true
+      },
+      "value_notes": "Power 7 W is a third-party catalog 'average power'. TRL 6: not yet flown.",
+      "source_urls": [
+        "https://satcatalog.com/component/chameleon-swir",
+        "https://dragonflyaerospace.com/satellite-cameras/"
+      ]
+    },
+    {
+      "id": "tempest_d_radiometer",
+      "name": "TEMPEST-D Millimeter-Wave Radiometer",
+      "manufacturer": "NASA JPL",
+      "family": "microwave_radiometer",
+      "instrument_type": "microwave_radiometer",
+      "price_usd": null,
+      "price_type": "not_for_sale",
+      "mass_kg": 3,
+      "power_operating_w": 6.5,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "gsd_m": 25000,
+      "swath_km": 825,
+      "spectral_bands": "5 channels, 87-181 GHz",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": 10,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": null,
+        "gsat_50": null,
+        "gsat_200": null
+      },
+      "value_notes": "Mass, power and data rate are the project ALLOCATIONS (3 kg, 6.5 W, 10 kbps); the 2016 current-best-estimates were 1.6 kg, 3.8 W, 8 kbps. Swath 825 km is quoted at 400 km altitude, NOT the dataset's 500 km reference. Resolution is 25 km at 87 GHz and 13 km at 180 GHz at nadir. Occupies about 3U; exact dimensions not retrieved. Measures clouds and precipitation, not surface imagery.",
+      "source_urls": [
+        "https://esto.nasa.gov/forums/estf2016/PRESENTATIONS/Reising_A1P4_TEMPEST_ESTF2016.pdf",
+        "https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/web-misc/stp-h8/pdd/TEMPEST_TSDR_DPDD_B80.pdf",
+        "https://eoportal.org/satellite-missions/tempest-d"
+      ]
+    },
+    {
+      "id": "tropics_tms",
+      "name": "TROPICS Millimeter-wave Sounder (TMS)",
+      "manufacturer": "MIT Lincoln Laboratory / NASA",
+      "family": "microwave_radiometer",
+      "instrument_type": "microwave_sounder",
+      "price_usd": null,
+      "price_type": "not_for_sale",
+      "mass_kg": null,
+      "power_operating_w": 5,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "gsd_m": 15000,
+      "swath_km": 2000,
+      "spectral_bands": "12 channels, about 90-206 GHz",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 9,
+      "platform_fit": {
+        "gsat_20": null,
+        "gsat_50": null,
+        "gsat_200": null
+      },
+      "value_notes": "Payload MASS IS NOT PUBLISHED separately (the whole 3U satellite is 5.4 kg), so platform fit cannot be checked. Power is an upper bound: 'less than 5 W' for payload plus scanner; a 2023 slide says 3 W. Swath of almost 2000 km is from about 550 km altitude, NOT 500 km. 15 km is the nadir footprint of the highest-frequency channel; lower channels are coarser. Payload occupies 1U. Runs at 100% duty cycle.",
+      "source_urls": [
+        "https://ntrs.nasa.gov/api/citations/20260001511/downloads/TROPICS_ProcIEEE_1April2025_submitted_small.pdf",
+        "https://gestar2.umbc.edu/wp-content/uploads/sites/674/2023/11/Blackwell_TROPICS_CREWSR_NASA_GESTAR_26Sep2023.pdf"
+      ]
+    },
+    {
+      "id": "raincube_radar",
+      "name": "RainCube Ka-band Precipitation Radar (miniKaAR-C)",
+      "manufacturer": "NASA JPL",
+      "family": "radar",
+      "instrument_type": "precipitation_radar",
+      "price_usd": null,
+      "price_type": "not_for_sale",
+      "mass_kg": 7,
+      "power_operating_w": 22,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "gsd_m": 8000,
+      "swath_km": null,
+      "spectral_bands": "35.75 GHz (Ka-band)",
+      "onboard_storage_gb": null,
+      "data_rate_kbps": null,
+      "trl": 7,
+      "platform_fit": {
+        "gsat_20": false,
+        "gsat_50": null,
+        "gsat_200": null
+      },
+      "value_notes": "VERIFY MASS: 7 kg is read from a comparison table on a JPL slide. 22 W is transmit-mode power. Nadir-pointing profiler, so there is no swath: 8 km horizontal and 250 m vertical resolution. Instrument occupies 4U and needs a 0.5 m deployable antenna. Mission required a 25% radar duty cycle and 12.1 Gb/week of payload data.",
+      "source_urls": [
+        "https://www.ieee-bv.org/wp-content/uploads/2020/09/RainCube_IEEE_MTTS_Chapter_4-21-2020.pdf",
+        "https://www.usnc-ursi-archive.org/nrsm/2019/papers/F4-1.pdf",
+        "https://esto.nasa.gov/forums/estf2017/presentations/Peral_A1P2_ESTF2017.pdf"
+      ]
+    }
+  ],
+  "power_families": {
+    "solar_array": [
+      "endurosat_3u_solar_panel",
+      "endurosat_6u_solar_panel",
+      "endurosat_8u_deployable_solar_array",
+      "endurosat_3u_double_deployable_solar_array",
+      "endurosat_6u_deployable_solar_array",
+      "dhv_dsa_6u_1d_s",
+      "dhv_dsa_6u_2d_s",
+      "dcubed_origami_100w",
+      "dhv_dsa_889w"
+    ],
+    "battery": [
+      "exa_1u_battery_22wh",
+      "gomspace_bp4",
+      "exa_50wh_battery",
+      "gomspace_bpx_100wh",
+      "space_inventor_bat28_p4"
+    ],
+    "power_conditioning": [
+      "gomspace_p31u",
+      "endurosat_eps_i",
+      "dragonfly_eps_lp_1k5"
+    ]
+  },
+  "power_systems": [
+    {
+      "id": "endurosat_3u_solar_panel",
+      "name": "3U Solar Panel",
+      "manufacturer": "EnduroSat",
+      "family": "solar_array",
+      "type": "body_mounted",
+      "peak_power_w": 8.4,
+      "energy_wh": null,
+      "max_output_w": null,
+      "mass_kg": 0.147,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "Body-mounted panel. 'Up to 8.4 W in LEO' is peak sunlit power at best sun angle, not orbit average. Mass 146-147 g across EnduroSat pages.",
+      "source_urls": [
+        "https://www.endurosat.com/products/3u-deployable-solar-array",
+        "https://endurosat.com/products/1u-solar-panel-z"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "endurosat_6u_solar_panel",
+      "name": "6U Solar Panel",
+      "manufacturer": "EnduroSat",
+      "family": "solar_array",
+      "type": "body_mounted",
+      "peak_power_w": 19.2,
+      "energy_wh": null,
+      "max_output_w": null,
+      "mass_kg": 0.39,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "Body-mounted. Peak sunlit power.",
+      "source_urls": [
+        "https://endurosat.com/products/1u-solar-panel-z",
+        "https://www.endurosat.com/products/6u-solar-panel/"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "endurosat_8u_deployable_solar_array",
+      "name": "8U Deployable Solar Array",
+      "manufacturer": "EnduroSat",
+      "family": "solar_array",
+      "type": "deployable",
+      "peak_power_w": 24.0,
+      "energy_wh": null,
+      "max_output_w": null,
+      "mass_kg": 0.47,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "Peak sunlit power. A deployable adds a release mechanism, a deployment-failure risk the game can model.",
+      "source_urls": [
+        "https://endurosat.com/products/custom-6u-solar-panel"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "endurosat_3u_double_deployable_solar_array",
+      "name": "3U Deployable Solar Array (double)",
+      "manufacturer": "EnduroSat",
+      "family": "solar_array",
+      "type": "deployable",
+      "peak_power_w": 25.2,
+      "energy_wh": null,
+      "max_output_w": null,
+      "mass_kg": 0.468,
+      "dimensions_mm": null,
+      "trl": 9,
+      "value_notes": "25.2 W is the double-deployable version (single is 16.8 W). Mass is published as a range 285-468 g by configuration; the upper value is used. A 2021 catalog lists an average cost of USD 15,300 (FY2021) for the 3U deployable; not used as price_usd because the configuration it refers to is not stated. TRL 9 inferred from 'flight proven'.",
+      "source_urls": [
+        "https://www.endurosat.com/products/3u-deployable-solar-array",
+        "https://www.satcatalog.com/component/3u-deployable-solar-array/"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "endurosat_6u_deployable_solar_array",
+      "name": "6U Deployable Solar Array",
+      "manufacturer": "EnduroSat",
+      "family": "solar_array",
+      "type": "deployable",
+      "peak_power_w": 38.4,
+      "energy_wh": null,
+      "max_output_w": null,
+      "mass_kg": 0.757,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "VERIFY: 38.4 W peak is for the single deployable and X/Y double deployable (satsearch); EnduroSat's own pages say 'up to 19.2 W per side'. Mass 757 g from an EnduroSat related-products listing.",
+      "source_urls": [
+        "https://satsearch.co/products/endurosat-6u-deployable-solar-array",
+        "https://endurosat.com/products/custom-6u-solar-panel"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "dhv_dsa_6u_1d_s",
+      "name": "DSA-6U-1D-S Deployable Wing",
+      "manufacturer": "DHV Technology",
+      "family": "solar_array",
+      "type": "deployable",
+      "peak_power_w": 19.0,
+      "energy_wh": null,
+      "max_output_w": null,
+      "mass_kg": 0.54,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "Published as '> 19 W' BOL (beginning of life) and '< 540 g'. Single deployable wing, 20 cells.",
+      "source_urls": [
+        "https://cdn-assets.inwink.com/dc9072b4-cd94-4669-ba98-1adcec9979bf/b474af2f-560a-4f4c-8a91-1b7d313b7590"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "dhv_dsa_6u_2d_s",
+      "name": "DSA-6U-2D-S Double Deployable Wing",
+      "manufacturer": "DHV Technology",
+      "family": "solar_array",
+      "type": "deployable",
+      "peak_power_w": 54.72,
+      "energy_wh": null,
+      "max_output_w": null,
+      "mass_kg": 0.82,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "Published as '> 54.72 W' BOL and '< 820 g'. 58 cells. Best watts-per-kg of the CubeSat arrays here.",
+      "source_urls": [
+        "https://cdn-assets.inwink.com/dc9072b4-cd94-4669-ba98-1adcec9979bf/b474af2f-560a-4f4c-8a91-1b7d313b7590"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "dcubed_origami_100w",
+      "name": "1U 100W Origami Solar Array",
+      "manufacturer": "Dcubed",
+      "family": "solar_array",
+      "type": "deployable_folding",
+      "peak_power_w": 100,
+      "energy_wh": null,
+      "max_output_w": null,
+      "mass_kg": 1.2,
+      "dimensions_mm": [
+        100,
+        100,
+        100
+      ],
+      "trl": null,
+      "value_notes": "100 W is taken from the product name; no separate power figure was retrieved. Stowed 1U, deploys to 1100 x 1100 mm. Large deployed area means a more complex deployment.",
+      "source_urls": [
+        "https://satsearch.co/products/dcubed-1u-100w-origami-solar-array"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "dhv_dsa_889w",
+      "name": "DSA-889W Quintuple Deployable Wing",
+      "manufacturer": "DHV Technology",
+      "family": "solar_array",
+      "type": "deployable",
+      "peak_power_w": 889,
+      "energy_wh": null,
+      "max_output_w": null,
+      "mass_kg": 24.0,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "Published as '> 889 W' BOL and '< 24000 g', 782 cells. The only array sized for a large (GSAT-200 class) spacecraft.",
+      "source_urls": [
+        "https://cdn-assets.inwink.com/dc9072b4-cd94-4669-ba98-1adcec9979bf/b474af2f-560a-4f4c-8a91-1b7d313b7590"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "exa_1u_battery_22wh",
+      "name": "1U High Capacity Battery Array",
+      "manufacturer": "EXA",
+      "family": "battery",
+      "type": "li_polymer",
+      "peak_power_w": null,
+      "energy_wh": 22.2,
+      "max_output_w": null,
+      "mass_kg": 0.125,
+      "dimensions_mm": [
+        95,
+        89,
+        7
+      ],
+      "trl": null,
+      "value_notes": "Li-Po, 3.7 V, 6000 mAh.",
+      "source_urls": [
+        "https://satsearch.co/products/exa-1u-high-capacity-battery-arrays"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "gomspace_bp4",
+      "name": "NanoPower BP4",
+      "manufacturer": "GomSpace",
+      "family": "battery",
+      "type": "li_ion",
+      "peak_power_w": null,
+      "energy_wh": 43,
+      "max_output_w": null,
+      "mass_kg": 0.258,
+      "dimensions_mm": [
+        94,
+        84,
+        23
+      ],
+      "trl": 9,
+      "value_notes": "4 Li-ion cells. The datasheet gives both 258 g (physical characteristics table) and 270 g (feature list); 258 g used. TRL 9 inferred from extensive flight history (flew on GOMX-3).",
+      "source_urls": [
+        "https://gomspace.com/UserFiles/Subsystems/datasheet/gs-ds-nanopower-bp4_(DS_-_1013024_-_1_-_31)_-_1.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "exa_50wh_battery",
+      "name": "50Whr High Energy Density LiPo Battery Array",
+      "manufacturer": "EXA",
+      "family": "battery",
+      "type": "li_polymer",
+      "peak_power_w": null,
+      "energy_wh": 44.4,
+      "max_output_w": null,
+      "mass_kg": 0.21,
+      "dimensions_mm": [
+        95,
+        89,
+        7
+      ],
+      "trl": null,
+      "value_notes": "Despite the product name, the listed capacity is 44.4 Wh (12000 mAh at 3.7 V). Lightest per Wh, but no flight-heritage data retrieved.",
+      "source_urls": [
+        "https://satsearch.co/products/exa-50-whr-high-energy-density-li-po-battery-array"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "gomspace_bpx_100wh",
+      "name": "NanoPower BPX 100 Wh",
+      "manufacturer": "GomSpace",
+      "family": "battery",
+      "type": "li_ion",
+      "peak_power_w": null,
+      "energy_wh": 100,
+      "max_output_w": null,
+      "mass_kg": null,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "100 Wh nominal, 86 Wh in the recommended operating range: use 86 Wh as usable energy. MASS NOT RETRIEVED; a GomSpace platform-kit option sheet says each additional pack adds 'roughly 0.5 kg' (that sheet does not name the pack model).",
+      "source_urls": [
+        "https://gomspace.com/wp-content/uploads/2025/09/gs-ds-nanopower-BPX-100-Wh-1076870-1.1.0.pdf",
+        "https://gomspace.com/wp-content/uploads/2025/09/gs-osf-nanosat-6U-Kit-OSF-1063735-1-1.3-1.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "space_inventor_bat28_p4",
+      "name": "Battery BAT-28-P4",
+      "manufacturer": "Space Inventor",
+      "family": "battery",
+      "type": "li_ion",
+      "peak_power_w": null,
+      "energy_wh": 100,
+      "max_output_w": 200,
+      "mass_kg": 0.544,
+      "dimensions_mm": null,
+      "trl": 9,
+      "price_type": "published_other_currency",
+      "price_published": {
+        "amount": 9000,
+        "currency": "EUR",
+        "basis": "list price"
+      },
+      "value_notes": "28.8 V, maximum power '< 200 W'. List price EUR 9,000, not converted to USD.",
+      "source_urls": [
+        "https://satsearch.co/products/space-inventor-bat600-p3"
+      ],
+      "price_usd": null
+    },
+    {
+      "id": "gomspace_p31u",
+      "name": "NanoPower P31u",
+      "manufacturer": "GomSpace",
+      "family": "power_conditioning",
+      "type": "eps",
+      "peak_power_w": null,
+      "energy_wh": null,
+      "max_output_w": 30,
+      "mass_kg": null,
+      "dimensions_mm": null,
+      "trl": 9,
+      "value_notes": "Designed for 'power demands from 1-30 W'; max_output_w is that upper end. No onboard battery: pairs with BP4 or BPX. Mass not retrieved. TRL 9 inferred from flight heritage.",
+      "source_urls": [
+        "https://gomspace.com/shop/subsystems/power/nanopower-p31u.aspx"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "endurosat_eps_i",
+      "name": "CubeSat EPS (Electrical Power System)",
+      "manufacturer": "EnduroSat",
+      "family": "power_conditioning",
+      "type": "eps_with_battery",
+      "peak_power_w": null,
+      "energy_wh": 99,
+      "max_output_w": 437,
+      "mass_kg": 1.478,
+      "dimensions_mm": null,
+      "trl": 9,
+      "value_notes": "Includes one 99 Wh 4S2P Li-ion pack (a second pack is optional for 12U-16U). 437 W maximum continuous output, 75 W peak input per solar channel. Whether the 1478 g includes the pack is not stated explicitly.",
+      "source_urls": [
+        "https://satsearch.co/products/endurosat-eps-i-electrical-power-system"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    },
+    {
+      "id": "dragonfly_eps_lp_1k5",
+      "name": "EPS-LP-1k5",
+      "manufacturer": "Dragonfly Aerospace",
+      "family": "power_conditioning",
+      "type": "eps",
+      "peak_power_w": null,
+      "energy_wh": null,
+      "max_output_w": 1500,
+      "mass_kg": 3.3,
+      "dimensions_mm": null,
+      "trl": 9,
+      "value_notes": "28 V system for microsatellites; flew on EOS SAT-1. max_output_w 1500 W is a third-party catalog 'power' figure, read from the '1k5' rating. Battery is separate.",
+      "source_urls": [
+        "https://www.eoportal.org/satellite-missions/eos-sat-1",
+        "https://www.satcatalog.com/vendor/dragonfly-aerospace/components/"
+      ],
+      "price_usd": null,
+      "price_type": "not_published"
+    }
+  ],
+  "communication_families": {
+    "uhf": [
+      "endurosat_uhf_transceiver_ii"
+    ],
+    "s_band": [
+      "endurosat_s_band_transceiver",
+      "endurosat_s_band_transmitter"
+    ],
+    "x_band": [
+      "endurosat_x_band_transmitter",
+      "syrlinks_ewc27_x_lite",
+      "endurosat_x_band_sdr"
+    ],
+    "optical": [
+      "osiris4cubesat",
+      "cubecat"
+    ]
+  },
+  "communication_systems": [
+    {
+      "id": "endurosat_uhf_transceiver_ii",
+      "name": "UHF Transceiver II",
+      "manufacturer": "EnduroSat",
+      "family": "uhf",
+      "role": "tt_and_c",
+      "band": "UHF",
+      "frequency_mhz": [
+        400,
+        403
+      ],
+      "downlink_kbps": 19.6,
+      "uplink_kbps": 19.6,
+      "power_tx_w": 8,
+      "power_idle_w": 1,
+      "rf_output_w": 1,
+      "mass_kg": 0.2,
+      "dimensions_mm": [
+        95,
+        89,
+        23.2
+      ],
+      "trl": 9,
+      "needs_optical_ground_station": false,
+      "value_notes": "Half-duplex: also receives commands. Configurable 1.2-19.6 kbps. 8 W is 'typical Tx power' (DC draw), 1 W idle receive. Also offered at 435-438 MHz. An older 2022 catalog lists 94 g for a previous version. TRL 9 inferred from flight heritage.",
+      "source_urls": [
+        "https://www.endurosat.com/products/uhf-transceiver-ii/",
+        "https://satsearch.co/products/endurosat-uhf-transceiver-ii"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "can_receive_commands": true,
+      "ground_station_type": "uhf"
+    },
+    {
+      "id": "endurosat_s_band_transceiver",
+      "name": "S-Band Transceiver",
+      "manufacturer": "EnduroSat",
+      "family": "s_band",
+      "role": "tt_and_c",
+      "band": "S",
+      "frequency_mhz": [
+        2200,
+        2290
+      ],
+      "downlink_kbps": 125,
+      "uplink_kbps": 125,
+      "power_tx_w": 12,
+      "power_idle_w": 1.2,
+      "rf_output_w": 2.0,
+      "mass_kg": 0.246,
+      "dimensions_mm": null,
+      "trl": 9,
+      "needs_optical_ground_station": false,
+      "price_usd": 14000,
+      "price_type": "published",
+      "value_notes": "Full duplex (receives on 2025-2110 MHz). Configurable 0.1-125 kbps; uplink rate assumed equal to the configurable range (not stated separately). 12 W is maximum power at 33 dBm transmit; 1.2 W receive-only. rf_output_w 2.0 is 33 dBm converted. List price USD 14,000 on satsearch.",
+      "source_urls": [
+        "https://endurosat.com/products/s-band-transceiver",
+        "https://satsearch.co/products/endurosat-s-band-receiver"
+      ],
+      "can_receive_commands": true,
+      "ground_station_type": "s_band"
+    },
+    {
+      "id": "endurosat_s_band_transmitter",
+      "name": "S-Band Transmitter",
+      "manufacturer": "EnduroSat",
+      "family": "s_band",
+      "role": "payload_downlink",
+      "band": "S",
+      "frequency_mhz": [
+        2200,
+        2290
+      ],
+      "downlink_kbps": 20000,
+      "uplink_kbps": 0,
+      "power_tx_w": 9,
+      "power_idle_w": null,
+      "rf_output_w": 2.0,
+      "mass_kg": 0.25,
+      "dimensions_mm": null,
+      "trl": 9,
+      "needs_optical_ground_station": false,
+      "value_notes": "Transmit only: cannot receive commands, so it needs a separate TT&C radio. 20 Mbps is maximum GROSS rate. Power 9 W is a third-party catalog 'average power'. Mass 250 g from a 2022 EnduroSat catalog. Tx RF 0.5-2 W configurable.",
+      "source_urls": [
+        "https://endurosat.com/products/s-band-transmitter",
+        "https://www.satcatalog.com/component/s-band-transmitter/",
+        "https://endurosat.com/wp-content/uploads/2022/02/Endurosat_Product_Catalogue_02_22.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "can_receive_commands": false,
+      "ground_station_type": "s_band"
+    },
+    {
+      "id": "endurosat_x_band_transmitter",
+      "name": "X-Band Transmitter",
+      "manufacturer": "EnduroSat",
+      "family": "x_band",
+      "role": "payload_downlink",
+      "band": "X",
+      "frequency_mhz": [
+        8025,
+        8400
+      ],
+      "downlink_kbps": 150000,
+      "uplink_kbps": 0,
+      "power_tx_w": 12,
+      "power_idle_w": null,
+      "rf_output_w": 2.0,
+      "mass_kg": 0.396,
+      "dimensions_mm": null,
+      "trl": 9,
+      "needs_optical_ground_station": false,
+      "value_notes": "Transmit only. 150 Mbps maximum gross rate. Mass 396 g +/-5% on the current product page (an older listing says 270 g). Power 12 W is a third-party catalog 'average power'. Includes 2 x 16 GB storage. Needs an X-band ground station.",
+      "source_urls": [
+        "https://endurosat.com/products/x-band-transmitter/",
+        "https://www.satcatalog.com/component/x-band-transmitter/"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "can_receive_commands": false,
+      "ground_station_type": "x_band"
+    },
+    {
+      "id": "syrlinks_ewc27_x_lite",
+      "name": "X-LITE (EWC27) X-Band Transmitter",
+      "manufacturer": "Safran Data Systems (Syrlinks)",
+      "family": "x_band",
+      "role": "payload_downlink",
+      "band": "X",
+      "frequency_mhz": [
+        8025,
+        8500
+      ],
+      "downlink_kbps": 140000,
+      "uplink_kbps": 0,
+      "power_tx_w": 12,
+      "power_idle_w": null,
+      "rf_output_w": null,
+      "mass_kg": null,
+      "dimensions_mm": null,
+      "trl": 9,
+      "needs_optical_ground_station": false,
+      "value_notes": "Transmit only (optional S-band receiver variant exists). Very strong heritage: 200 flight models delivered and '300 years cumulated in orbit without failure' per the manufacturer, a reliability argument the game can reward. MASS NOT RETRIEVED.",
+      "source_urls": [
+        "https://www.safran-group.com/products-services/x-lite-x-band-transmitter-nano-satellites",
+        "https://satsearch.co/products/syrlinks-ewc27-x-band-transmitter"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "can_receive_commands": false,
+      "ground_station_type": "x_band"
+    },
+    {
+      "id": "endurosat_x_band_sdr",
+      "name": "X-Band Software Defined Radio",
+      "manufacturer": "EnduroSat",
+      "family": "x_band",
+      "role": "payload_downlink",
+      "band": "X",
+      "frequency_mhz": [
+        8000,
+        8400
+      ],
+      "downlink_kbps": 1000000,
+      "uplink_kbps": null,
+      "power_tx_w": null,
+      "power_idle_w": null,
+      "rf_output_w": null,
+      "mass_kg": null,
+      "dimensions_mm": null,
+      "trl": null,
+      "needs_optical_ground_station": false,
+      "value_notes": "'1+ Gbps' gross rate with DVB-S2X up to 256-APSK; up to 160 GB storage. MASS AND POWER NOT RETRIEVED, so it cannot be checked against mass or power budgets yet. Described as having two full-duplex channels; uplink rate not stated.",
+      "source_urls": [
+        "https://www.endurosat.com/products/x-band-sdr/",
+        "https://satsearch.co/products/endurosat-versatile-wideband-software-defined-radio-sdr"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "can_receive_commands": null,
+      "ground_station_type": "x_band"
+    },
+    {
+      "id": "osiris4cubesat",
+      "name": "OSIRIS4CubeSat",
+      "manufacturer": "DLR / TESAT",
+      "family": "optical",
+      "role": "payload_downlink",
+      "band": "optical",
+      "frequency_mhz": null,
+      "downlink_kbps": 100000,
+      "uplink_kbps": null,
+      "power_tx_w": 8.5,
+      "power_idle_w": null,
+      "rf_output_w": null,
+      "mass_kg": 0.395,
+      "dimensions_mm": null,
+      "trl": null,
+      "needs_optical_ground_station": true,
+      "value_notes": "Laser terminal, one-third of a CubeSat unit. Data rate 2-100 Mbps (maximum used). Power is the maximum 8.5 W. Needs an optical ground station and clear sky; no radio licence needed.",
+      "source_urls": [
+        "https://elib.dlr.de/215483/1/aerospace-12-00655.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "can_receive_commands": null,
+      "ground_station_type": "optical"
+    },
+    {
+      "id": "cubecat",
+      "name": "CubeCAT Laser Communication Module",
+      "manufacturer": "AAC Clyde Space / TNO",
+      "family": "optical",
+      "role": "payload_downlink",
+      "band": "optical",
+      "frequency_mhz": null,
+      "downlink_kbps": 1000000,
+      "uplink_kbps": 200,
+      "power_tx_w": 15,
+      "power_idle_w": 1,
+      "rf_output_w": null,
+      "mass_kg": 1.33,
+      "dimensions_mm": [
+        96,
+        96,
+        96
+      ],
+      "trl": 9,
+      "needs_optical_ground_station": true,
+      "value_notes": "1 Gbps downlink, 200 kbps uplink. Power ~15 W peak while downlinking, orbit average < 1 W (stored as power_idle_w). Mass '< 1.33 kg' (manufacturer); a 2026 TNO paper reports 1.0 kg and 10.8 W for the flown unit. Maximum slant range 1000 km. Needs an optical ground station and clear sky. Lead time 9-12 months.",
+      "source_urls": [
+        "https://www.aac-clyde.space/wp-content/uploads/2021/10/CUBECAT.pdf",
+        "https://satnow.com/products/laser-communication-terminals/aac-clyde-space/155-1154-cubecat",
+        "https://publications.tno.nl/publication/34645972/j3trUXkd/Doelman-2026-Design.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "can_receive_commands": true,
+      "ground_station_type": "optical"
+    }
+  ],
+  "propulsion_families": {
+    "cold_gas": [
+      "vacco_cusp_mips",
+      "vacco_puc_1u",
+      "vacco_nea_scout_mips"
+    ],
+    "chemical": [
+      "busek_bgt_x5",
+      "vacco_ecaps_hybrid_adn"
+    ],
+    "electric": [
+      "enpulsion_nano_r3",
+      "thrustme_npt30_i2_1u",
+      "thrustme_npt30_i2_1_5u",
+      "enpulsion_micro"
+    ]
+  },
+  "propulsion_systems": [
+    {
+      "id": "vacco_cusp_mips",
+      "name": "CuSP Micro Propulsion System",
+      "manufacturer": "VACCO Industries",
+      "family": "cold_gas",
+      "propellant": "R-236fa",
+      "thrust_n": 0.1,
+      "isp_s": null,
+      "total_impulse_ns": 69.4,
+      "propellant_mass_kg": 0.177,
+      "wet_mass_kg": 0.69,
+      "dry_mass_kg": 0.513,
+      "power_firing_w": 11,
+      "power_standby_w": 1,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "Four 25 mN thrusters (thrust_n is the sum, 0.1 N). About 0.3U. Mass and power are maxima. Also usable for attitude control. Isp is derived from total impulse and propellant mass (cold gas is inefficient: about 40 s).",
+      "source_urls": [
+        "https://cubesat-propulsion.com/cusp-propulsion-system/"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "isp_s_derived": 40.0,
+      "mass_rule": "wet_mass_kg already includes propellant: do not add propellant_mass_kg on top of it."
+    },
+    {
+      "id": "vacco_puc_1u",
+      "name": "AFRL Propulsion Unit for CubeSats (1U)",
+      "manufacturer": "VACCO Industries / CU Aerospace",
+      "family": "cold_gas",
+      "propellant": "liquefied gas, warm-gas mode",
+      "thrust_n": 0.0054,
+      "isp_s": null,
+      "total_impulse_ns": 595,
+      "propellant_mass_kg": null,
+      "wet_mass_kg": null,
+      "dry_mass_kg": 0.835,
+      "power_firing_w": 15,
+      "power_standby_w": 0.055,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "Warm-gas thruster (heated, so better than pure cold gas). 1U size; 0.25U and 0.5U versions give 183 and 320 Ns. Propellant mass and wet mass not published, so Isp cannot be derived.",
+      "source_urls": [
+        "https://cubesat-propulsion.com/?p=126"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_rule": "wet_mass_kg already includes propellant: do not add propellant_mass_kg on top of it."
+    },
+    {
+      "id": "vacco_nea_scout_mips",
+      "name": "NEA Scout Micro Propulsion System",
+      "manufacturer": "VACCO Industries",
+      "family": "cold_gas",
+      "propellant": "cold gas",
+      "thrust_n": 0.15,
+      "isp_s": null,
+      "total_impulse_ns": 500,
+      "propellant_mass_kg": null,
+      "wet_mass_kg": null,
+      "dry_mass_kg": 1.263,
+      "power_firing_w": 22,
+      "power_standby_w": null,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "Six 25 mN thrusters (thrust_n is the sum). About 2U. Dry mass and power from a third-party catalog. Gives 37 m/s to a 14 kg CubeSat (manufacturer).",
+      "source_urls": [
+        "https://cubesat-propulsion.com/?p=949",
+        "https://www.satcatalog.com/component/nea-scout-mips/"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_rule": "wet_mass_kg already includes propellant: do not add propellant_mass_kg on top of it."
+    },
+    {
+      "id": "busek_bgt_x5",
+      "name": "BGT-X5 Green Monopropellant System",
+      "manufacturer": "Busek",
+      "family": "chemical",
+      "propellant": "ASCENT (green monopropellant)",
+      "thrust_n": 0.5,
+      "isp_s": 225,
+      "total_impulse_ns": 565,
+      "propellant_mass_kg": null,
+      "wet_mass_kg": 1.5,
+      "dry_mass_kg": null,
+      "power_firing_w": 20,
+      "power_standby_w": null,
+      "dimensions_mm": [
+        100,
+        100,
+        100
+      ],
+      "trl": null,
+      "value_notes": "High thrust (0.5 N): fast manoeuvres. Isp is 220-225 s (upper value used). 1.5 kg is system mass at beginning of life (wet). A third-party catalog lists 'propellant mass 1.5 kg', which looks like a copy of system mass; propellant mass here is derived from impulse and Isp instead. Gives 146 m/s to a 4 kg CubeSat (manufacturer).",
+      "source_urls": [
+        "https://www.busek.com/bgtx5",
+        "https://satsearch.co/products/busek-bgt-x5"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "propellant_mass_kg_derived": 0.256,
+      "mass_rule": "wet_mass_kg already includes propellant: do not add propellant_mass_kg on top of it."
+    },
+    {
+      "id": "vacco_ecaps_hybrid_adn",
+      "name": "Hybrid ADN Delta-V / RCS System",
+      "manufacturer": "VACCO / ECAPS",
+      "family": "chemical",
+      "propellant": "ADN (green monopropellant) + cold gas",
+      "thrust_n": 0.1,
+      "isp_s": null,
+      "total_impulse_ns": 1036,
+      "propellant_mass_kg": 0.528,
+      "wet_mass_kg": 1.797,
+      "dry_mass_kg": 1.093,
+      "power_firing_w": 15,
+      "power_standby_w": 0.055,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "One 100 mN ADN thruster for delta-v plus four 10 mN cold-gas thrusters for attitude control (69 Ns of extra RCS impulse not counted in total_impulse_ns). propellant_mass_kg is the ADN only. Power is '< 15 W' during hot-fire.",
+      "source_urls": [
+        "https://cubesat-propulsion.com/hybrid-adn-delta-v-rcs-system/"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "isp_s_derived": 200.1,
+      "mass_rule": "wet_mass_kg already includes propellant: do not add propellant_mass_kg on top of it."
+    },
+    {
+      "id": "enpulsion_nano_r3",
+      "name": "ENPULSION NANO R3",
+      "manufacturer": "ENPULSION",
+      "family": "electric",
+      "propellant": "indium (FEEP)",
+      "thrust_n": 0.00035,
+      "isp_s": 2500,
+      "total_impulse_ns": 5300,
+      "propellant_mass_kg": 0.215,
+      "wet_mass_kg": 1.5,
+      "dry_mass_kg": 1.28,
+      "power_firing_w": 45,
+      "power_standby_w": null,
+      "dimensions_mm": [
+        98,
+        99,
+        95.3
+      ],
+      "trl": 9,
+      "value_notes": "2026 datasheet values at the guaranteed 350 uN point. Very high Isp but tiny thrust (0.35 mN): a manoeuvre takes days to weeks, and it needs 30-50 W while firing. Masses are upper bounds. More than 240 NANO-family units in space. TRL 9 inferred from flight heritage.",
+      "source_urls": [
+        "https://www.enpulsion.com/wp-content/uploads/DataSheet_Nano_20260319.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "mass_rule": "wet_mass_kg already includes propellant: do not add propellant_mass_kg on top of it."
+    },
+    {
+      "id": "thrustme_npt30_i2_1u",
+      "name": "NPT30-I2 1U",
+      "manufacturer": "ThrustMe",
+      "family": "electric",
+      "propellant": "solid iodine (gridded ion)",
+      "thrust_n": 0.0011,
+      "isp_s": 2400,
+      "total_impulse_ns": 5500,
+      "propellant_mass_kg": null,
+      "wet_mass_kg": 1.2,
+      "dry_mass_kg": null,
+      "power_firing_w": 65,
+      "power_standby_w": null,
+      "dimensions_mm": [
+        96,
+        96,
+        113
+      ],
+      "trl": null,
+      "value_notes": "Thrust 0.3-1.1 mN and power 35-65 W (maxima used). Isp and total impulse are 'up to' values. A third-party catalog lists 'propellant mass 1.2 kg', which looks like a copy of wet mass; propellant mass is derived instead. First iodine thruster flown (2020).",
+      "source_urls": [
+        "https://thrustme.fr/base/stock/ProductBannerFiles/2_thrustme-npt30-i2.pdf",
+        "https://satsearch.co/products/thrustme-npt30-i2-1u-electric-propulsion-system"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "propellant_mass_kg_derived": 0.234,
+      "mass_rule": "wet_mass_kg already includes propellant: do not add propellant_mass_kg on top of it."
+    },
+    {
+      "id": "thrustme_npt30_i2_1_5u",
+      "name": "NPT30-I2 1.5U",
+      "manufacturer": "ThrustMe",
+      "family": "electric",
+      "propellant": "solid iodine (gridded ion)",
+      "thrust_n": 0.0011,
+      "isp_s": 2400,
+      "total_impulse_ns": 9500,
+      "propellant_mass_kg": null,
+      "wet_mass_kg": 1.7,
+      "dry_mass_kg": null,
+      "power_firing_w": 65,
+      "power_standby_w": null,
+      "dimensions_mm": [
+        93,
+        93,
+        155
+      ],
+      "trl": null,
+      "value_notes": "Same engine as the 1U with a bigger tank: +0.5 kg for +4000 Ns. Values are 'up to'.",
+      "source_urls": [
+        "https://thrustme.fr/base/stock/ProductBannerFiles/2_thrustme-npt30-i2.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "propellant_mass_kg_derived": 0.404,
+      "mass_rule": "wet_mass_kg already includes propellant: do not add propellant_mass_kg on top of it."
+    },
+    {
+      "id": "enpulsion_micro",
+      "name": "ENPULSION MICRO (IFM Micro Thruster)",
+      "manufacturer": "ENPULSION",
+      "family": "electric",
+      "propellant": "indium (FEEP)",
+      "thrust_n": 0.001,
+      "isp_s": null,
+      "total_impulse_ns": 50000,
+      "propellant_mass_kg": 1.3,
+      "wet_mass_kg": 3.9,
+      "dry_mass_kg": 2.6,
+      "power_firing_w": 105,
+      "power_standby_w": 15,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "For larger spacecraft. Nominal thrust 1 mN (max 1.72 mN), 'up to 50 kNs', Isp range 1500-4500 s. Thruster head 140 x 120 x 98.6 mm plus a separate power unit 140 x 120 x 34 mm, so dimensions are left null. Standby power 10-15 W (upper used).",
+      "source_urls": [
+        "https://enpulsion.com/propulsion",
+        "https://core.ac.uk/download/224735035.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "isp_s_derived": 3922.0,
+      "mass_rule": "wet_mass_kg already includes propellant: do not add propellant_mass_kg on top of it."
+    }
+  ],
+  "adcs_families": {
+    "three_axis": [
+      "cubespace_cubeadcs_3axis_small",
+      "cubespace_cubeadcs_3axis_small_star",
+      "kuleuven_kuladcs",
+      "arcsec_arcus_adc"
+    ],
+    "three_axis_precision": [
+      "bct_xact_15",
+      "bct_xact_50",
+      "bct_xact_100"
+    ]
+  },
+  "adcs_systems": [
+    {
+      "id": "cubespace_cubeadcs_3axis_small",
+      "name": "CubeADCS 3-Axis Small",
+      "manufacturer": "CubeSpace",
+      "family": "three_axis",
+      "pointing_accuracy_deg": 1.0,
+      "mass_kg": 0.55,
+      "power_w": null,
+      "has_star_tracker": false,
+      "dimensions_mm": null,
+      "trl": 9,
+      "value_notes": "'< 1 deg' pointing (upper bound used). 3 reaction wheels, 3 magnetorquers, sun and earth sensors. The CubeADCS family draws 0.57-2.3 W depending on configuration; per-configuration power not retrieved. TRL 7-9 band in NASA's table; 9 used.",
+      "source_urls": [
+        "https://www.nasa.gov/wp-content/uploads/2021/10/5.soa_gnc_2021.pdf",
+        "https://satnow.com/products/adcs-systems/cubespace/46-1187-cubeadcs-3-axis"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "pointing_metric": "upper_bound",
+      "pointing_conditions": "published as '< 1 deg'",
+      "power_range_w": {
+        "min": 0.57,
+        "max": 2.3,
+        "basis": "published range for the whole CubeADCS family (SatNow), not this exact configuration"
+      }
+    },
+    {
+      "id": "cubespace_cubeadcs_3axis_small_star",
+      "name": "CubeADCS 3-Axis Small with Star Tracker",
+      "manufacturer": "CubeSpace",
+      "family": "three_axis",
+      "pointing_accuracy_deg": 0.5,
+      "mass_kg": 0.61,
+      "power_w": null,
+      "has_star_tracker": true,
+      "dimensions_mm": null,
+      "trl": 9,
+      "value_notes": "'< 0.5 deg'. Same as Small plus a star tracker (+60 g for twice the accuracy).",
+      "source_urls": [
+        "https://www.nasa.gov/wp-content/uploads/2021/10/5.soa_gnc_2021.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "pointing_metric": "upper_bound",
+      "pointing_conditions": "published as '< 0.5 deg'",
+      "power_range_w": {
+        "min": 0.57,
+        "max": 2.3,
+        "basis": "published range for the whole CubeADCS family (SatNow), not this exact configuration"
+      }
+    },
+    {
+      "id": "kuleuven_kuladcs",
+      "name": "KULADCS",
+      "manufacturer": "KU Leuven",
+      "family": "three_axis",
+      "pointing_accuracy_deg": 0.11,
+      "mass_kg": 0.715,
+      "power_w": 1.4,
+      "has_star_tracker": true,
+      "dimensions_mm": null,
+      "trl": null,
+      "value_notes": "0.11 deg (1-sigma) in fine/fine mode, day or eclipse; 1.4 W in that mode. Coarse modes are much worse (up to 6.4 deg). University product.",
+      "source_urls": [
+        "https://www.cubesatshop.com/wp-content/uploads/2018/10/KULADCS-Datasheet_v2.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "pointing_metric": "one_sigma",
+      "pointing_conditions": "fine/fine mode only; coarse modes up to 6.4 deg"
+    },
+    {
+      "id": "arcsec_arcus_adc",
+      "name": "Arcus ADC",
+      "manufacturer": "Arcsec",
+      "family": "three_axis",
+      "pointing_accuracy_deg": 0.1,
+      "mass_kg": 0.715,
+      "power_w": null,
+      "has_star_tracker": true,
+      "dimensions_mm": null,
+      "trl": 9,
+      "value_notes": "0.1 deg from NASA's state-of-the-art table. Power not retrieved.",
+      "source_urls": [
+        "https://www.nasa.gov/wp-content/uploads/2021/10/5.soa_gnc_2021.pdf"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "pointing_metric": "unspecified",
+      "pointing_conditions": "value from a NASA comparison table, definition not stated"
+    },
+    {
+      "id": "bct_xact_15",
+      "name": "XACT-15",
+      "manufacturer": "Blue Canyon Technologies",
+      "family": "three_axis_precision",
+      "pointing_accuracy_deg": 0.007,
+      "mass_kg": 0.885,
+      "power_w": null,
+      "has_star_tracker": true,
+      "dimensions_mm": [
+        100,
+        100,
+        50
+      ],
+      "trl": 9,
+      "value_notes": "0.003 deg (2 axes) / 0.007 deg (3rd axis); worse value used. 15 mNms wheels. Power not retrieved. One student team dropped BCT from a trade study because the price was 'prohibitively above budget'.",
+      "source_urls": [
+        "https://www.nasa.gov/?p=61775",
+        "https://www.bluecanyontech.com/?p=4112",
+        "https://redmine.albertasat.ca/redmine/attachments/download/116/EX3-AC%20COTS%20ADCS%20Trade%20Study%20V0.5.docx"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "pointing_metric": "per_axis_worst",
+      "pointing_conditions": "0.003 deg on two axes, 0.007 deg on the third; worst used"
+    },
+    {
+      "id": "bct_xact_50",
+      "name": "XACT-50",
+      "manufacturer": "Blue Canyon Technologies",
+      "family": "three_axis_precision",
+      "pointing_accuracy_deg": 0.007,
+      "mass_kg": 1.23,
+      "power_w": null,
+      "has_star_tracker": true,
+      "dimensions_mm": [
+        100,
+        100,
+        75.4
+      ],
+      "trl": 9,
+      "value_notes": "Larger 50 mNms wheels: handles a heavier spacecraft or faster slews than XACT-15. Power not retrieved.",
+      "source_urls": [
+        "https://www.bluecanyontech.com/?p=4112",
+        "https://www.nasa.gov/?p=61775"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "pointing_metric": "per_axis_worst",
+      "pointing_conditions": "worst axis used"
+    },
+    {
+      "id": "bct_xact_100",
+      "name": "XACT-100",
+      "manufacturer": "Blue Canyon Technologies",
+      "family": "three_axis_precision",
+      "pointing_accuracy_deg": 0.007,
+      "mass_kg": 1.813,
+      "power_w": null,
+      "has_star_tracker": true,
+      "dimensions_mm": null,
+      "trl": 9,
+      "value_notes": "Mass 1.813 kg from NASA's table (BCT lists 0.52 kg core + 1 kg wheels). Power not retrieved. None of these units is sized for a 200 kg-class spacecraft; BCT sells wheels up to 9.3 kg (127 W max) for that, not included here.",
+      "source_urls": [
+        "https://www.nasa.gov/wp-content/uploads/2021/10/5.soa_gnc_2021.pdf",
+        "https://www.bluecanyontech.com/?p=4112"
+      ],
+      "price_usd": null,
+      "price_type": "not_published",
+      "pointing_metric": "per_axis_worst",
+      "pointing_conditions": "worst axis used"
+    }
+  ],
+  "orbits": [
+    {
+      "id": "leo_iss_400",
+      "name": "ISS-like LEO, 400 km, 51.6 deg",
+      "altitude_km": 400,
+      "inclination_deg": 51.6,
+      "sun_synchronous": false,
+      "period_min": 92.41,
+      "orbits_per_day": 15.58,
+      "orbital_speed_km_s": 7.673,
+      "ground_track_speed_km_s": 7.219,
+      "max_eclipse_fraction": 0.39,
+      "max_eclipse_min": 36.0,
+      "max_pass_duration_min_10deg": 6.2,
+      "resolution_scale_vs_500km": 0.8,
+      "orbital_lifetime_years": null,
+      "value_kind": "derived",
+      "value_notes": "Inclination 51.6 deg matches ISS-deployed missions such as TEMPEST-D and RainCube (399 x 407 km, 51.6 deg). Low altitude means sharper images but strong drag and a short life. Does not pass over the poles.",
+      "source_urls": [
+        "https://space.skyrocket.de/doc%5Fsdat/tempest-d.htm"
+      ]
+    },
+    {
+      "id": "leo_mid_inclination_550",
+      "name": "Mid-inclination LEO, 550 km, 45 deg",
+      "altitude_km": 550,
+      "inclination_deg": 45,
+      "sun_synchronous": false,
+      "period_min": 95.5,
+      "orbits_per_day": 15.08,
+      "orbital_speed_km_s": 7.589,
+      "ground_track_speed_km_s": 6.986,
+      "max_eclipse_fraction": 0.372,
+      "max_eclipse_min": 35.6,
+      "max_pass_duration_min_10deg": 7.9,
+      "resolution_scale_vs_500km": 1.1,
+      "orbital_lifetime_years": null,
+      "value_kind": "derived",
+      "value_notes": "45 deg matches SpaceX Bandwagon rideshare ('mid-inclination near 45 degrees'), good for frequent mid-latitude revisits; no polar coverage. Bandwagon pricing is quote-based, so no launch price is attached.",
+      "source_urls": [
+        "https://newspaceeconomy.ca/2026/10/20/how-has-the-spacex-transporter-program-reshaped-satellite-earth-observation/"
+      ]
+    },
+    {
+      "id": "sso_500",
+      "name": "Sun-synchronous orbit, 500 km",
+      "altitude_km": 500,
+      "inclination_deg": 97.4,
+      "sun_synchronous": true,
+      "period_min": 94.47,
+      "orbits_per_day": 15.24,
+      "orbital_speed_km_s": 7.617,
+      "ground_track_speed_km_s": 7.062,
+      "max_eclipse_fraction": 0.378,
+      "max_eclipse_min": 35.7,
+      "max_pass_duration_min_10deg": 7.4,
+      "resolution_scale_vs_500km": 1.0,
+      "orbital_lifetime_years": null,
+      "value_kind": "derived",
+      "value_notes": "Reference altitude for all instrument GSD and swath values. Standard capacity point for Electron, Firefly Alpha and SSLV.",
+      "source_urls": []
+    },
+    {
+      "id": "sso_600",
+      "name": "Sun-synchronous orbit, 600 km",
+      "altitude_km": 600,
+      "inclination_deg": 97.79,
+      "sun_synchronous": true,
+      "period_min": 96.54,
+      "orbits_per_day": 14.92,
+      "orbital_speed_km_s": 7.562,
+      "ground_track_speed_km_s": 6.911,
+      "max_eclipse_fraction": 0.367,
+      "max_eclipse_min": 35.4,
+      "max_pass_duration_min_10deg": 8.5,
+      "resolution_scale_vs_500km": 1.2,
+      "orbital_lifetime_years": null,
+      "value_kind": "derived",
+      "value_notes": "Reference altitude for PSLV's published capacity. Longer life than 500 km, 20% coarser imagery.",
+      "source_urls": []
+    },
+    {
+      "id": "sso_700",
+      "name": "Sun-synchronous orbit, 700 km",
+      "altitude_km": 700,
+      "inclination_deg": 98.19,
+      "sun_synchronous": true,
+      "period_min": 98.62,
+      "orbits_per_day": 14.6,
+      "orbital_speed_km_s": 7.508,
+      "ground_track_speed_km_s": 6.765,
+      "max_eclipse_fraction": 0.357,
+      "max_eclipse_min": 35.2,
+      "max_pass_duration_min_10deg": 9.6,
+      "resolution_scale_vs_500km": 1.4,
+      "orbital_lifetime_years": null,
+      "value_kind": "derived",
+      "value_notes": "Reference altitude for Vega C's published capacity. Longest life here, 40% coarser imagery, longer ground-station passes.",
+      "source_urls": []
+    }
+  ],
+  "launch_vehicle_families": {
+    "rideshare": [
+      "spacex_transporter_rideshare"
+    ],
+    "dedicated_small": [
+      "isro_sslv",
+      "rocket_lab_electron",
+      "firefly_alpha"
+    ],
+    "dedicated_medium": [
+      "isro_pslv_xl",
+      "vega_c"
+    ],
+    "dedicated_heavy": [
+      "spacex_falcon9_dedicated"
+    ]
+  },
+  "launch_vehicles": [
+    {
+      "id": "spacex_transporter_rideshare",
+      "name": "SpaceX Transporter rideshare (Falcon 9)",
+      "provider": "SpaceX",
+      "family": "rideshare",
+      "price_usd": 350000,
+      "price_type": "published",
+      "price_model": {
+        "base_usd": 350000,
+        "base_mass_kg": 50,
+        "extra_usd_per_kg": 7000
+      },
+      "capacity_points": [],
+      "orbit_ids_supported": [
+        "sso_500",
+        "sso_600"
+      ],
+      "customer_chooses_orbit": false,
+      "flights": null,
+      "successes": null,
+      "reliability_as_of": null,
+      "value_notes": "Price is $350,000 for up to 50 kg plus $7,000 per extra kg (2026 rate; rises about $500/kg per year). No per-customer mass cap published. SpaceX picks the injection orbit; the customer does not. orbit_ids_supported is a GAMEPLAY assumption that typical Transporter drops are SSO around 500-600 km, not a published fact. Integration, transport and insurance are extra.",
+      "source_urls": [
+        "https://newspaceeconomy.ca/2026/02/27/satellite-ridesharing-market-analysis-2026/",
+        "https://www.orbitalintel.org/launch/spacex-rideshare-program-explained/"
+      ],
+      "orbit_support_basis": {
+        "sso_500": "gameplay_assumption",
+        "sso_600": "gameplay_assumption"
+      },
+      "capacity_rule": "Use a capacity point only for its own orbit type and altitude. A LEO figure is never an SSO capacity."
+    },
+    {
+      "id": "isro_sslv",
+      "name": "SSLV",
+      "provider": "ISRO / NSIL",
+      "family": "dedicated_small",
+      "price_type": "not_published",
+      "price_estimate": {
+        "min_usd": 3600000,
+        "max_usd": 4200000,
+        "basis": "manufacturing cost per launch (INR 30-35 crore), not a sale price"
+      },
+      "capacity_points": [
+        {
+          "orbit": "sso",
+          "altitude_km": 500,
+          "mass_kg": 300
+        },
+        {
+          "orbit": "leo",
+          "altitude_km": 500,
+          "mass_kg": 500
+        }
+      ],
+      "orbit_ids_supported": [
+        "sso_500",
+        "leo_iss_400",
+        "leo_mid_inclination_550"
+      ],
+      "customer_chooses_orbit": true,
+      "flights": null,
+      "successes": null,
+      "reliability_as_of": null,
+      "value_notes": "Cheapest dedicated launcher by cost estimate, but the figure is ISRO's manufacturing cost, not a customer price. Short flight history (first flight 2022 failed). LEO orbit ids are a gameplay assumption based on the 500 km LEO capacity point.",
+      "source_urls": [
+        "https://newspaceeconomy.ca/2025/07/08/what-is-indias-sslv.md"
+      ],
+      "price_usd": null,
+      "orbit_support_basis": {
+        "sso_500": "published_capacity_point",
+        "leo_iss_400": "gameplay_assumption",
+        "leo_mid_inclination_550": "gameplay_assumption"
+      },
+      "capacity_rule": "Use a capacity point only for its own orbit type and altitude. A LEO figure is never an SSO capacity."
+    },
+    {
+      "id": "rocket_lab_electron",
+      "name": "Electron",
+      "provider": "Rocket Lab",
+      "family": "dedicated_small",
+      "price_usd": 7500000,
+      "price_type": "publicly_stated_estimate",
+      "capacity_points": [
+        {
+          "orbit": "sso",
+          "altitude_km": 500,
+          "mass_kg": 200
+        },
+        {
+          "orbit": "leo",
+          "altitude_km": null,
+          "mass_kg": 300
+        }
+      ],
+      "orbit_ids_supported": [
+        "sso_500",
+        "sso_600",
+        "leo_iss_400",
+        "leo_mid_inclination_550"
+      ],
+      "customer_chooses_orbit": true,
+      "flights": 46,
+      "successes": 42,
+      "reliability_as_of": "2024-04",
+      "value_notes": "Rocket Lab publishes no list price: ~USD 7.5M is the commonly cited figure, and average revenue per launch was about USD 9M in H1 2026. The 300 kg LEO point has no altitude given. Flight counts are from April 2024 (stale; it has flown more since).",
+      "source_urls": [
+        "https://orbitalradar.com/launch-vehicles/electron",
+        "https://spacenexus.us/guide/space-launch-cost-comparison",
+        "https://www.wikipedia.org/wiki/Electron_rocket"
+      ],
+      "orbit_support_basis": {
+        "sso_500": "published_capacity_point",
+        "sso_600": "gameplay_assumption",
+        "leo_iss_400": "gameplay_assumption",
+        "leo_mid_inclination_550": "gameplay_assumption"
+      },
+      "capacity_rule": "Use a capacity point only for its own orbit type and altitude. A LEO figure is never an SSO capacity."
+    },
+    {
+      "id": "firefly_alpha",
+      "name": "Alpha",
+      "provider": "Firefly Aerospace",
+      "family": "dedicated_small",
+      "price_usd": 19000000,
+      "price_type": "published",
+      "capacity_points": [
+        {
+          "orbit": "sso",
+          "altitude_km": 500,
+          "mass_kg": 630
+        },
+        {
+          "orbit": "leo",
+          "altitude_km": 300,
+          "mass_kg": 1030
+        }
+      ],
+      "orbit_ids_supported": [
+        "sso_500",
+        "sso_600",
+        "leo_iss_400",
+        "leo_mid_inclination_550"
+      ],
+      "customer_chooses_orbit": true,
+      "flights": 8,
+      "successes": 6,
+      "reliability_as_of": "2026-10",
+      "value_notes": "USD 19M dedicated commercial price in the 2025 Payload User's Guide (earlier advertised USD 15M). 8 flights, 6 successes, 1 failure, 1 partial failure: the lowest reliability here, a good risk trade-off for the game.",
+      "source_urls": [
+        "https://fireflyspace.com/wp-content/uploads/2025/07/Alpha-PUG-5.2.pdf",
+        "https://fireflyspace.com/?p=12",
+        "https://spacenexus.us/rockets/firefly-alpha"
+      ],
+      "orbit_support_basis": {
+        "sso_500": "published_capacity_point",
+        "sso_600": "gameplay_assumption",
+        "leo_iss_400": "gameplay_assumption",
+        "leo_mid_inclination_550": "gameplay_assumption"
+      },
+      "capacity_rule": "Use a capacity point only for its own orbit type and altitude. A LEO figure is never an SSO capacity."
+    },
+    {
+      "id": "isro_pslv_xl",
+      "name": "PSLV-XL",
+      "provider": "ISRO / NSIL",
+      "family": "dedicated_medium",
+      "price_type": "not_published",
+      "capacity_points": [
+        {
+          "orbit": "sso",
+          "altitude_km": 600,
+          "mass_kg": 1750
+        }
+      ],
+      "orbit_ids_supported": [
+        "sso_500",
+        "sso_600",
+        "sso_700"
+      ],
+      "customer_chooses_orbit": true,
+      "flights": null,
+      "successes": null,
+      "reliability_as_of": null,
+      "value_notes": "No current price published; older encyclopedia figures range USD 18-28M (not used). ~1750 kg to 600 km SSO (some sources say 620 km). The sso_500 and sso_700 ids are a gameplay assumption based on the 600 km point.",
+      "source_urls": [
+        "https://everydayastronaut.com/ds-sar-pslv-ca",
+        "https://newspaceeconomy.ca/2025/07/08/what-is-indias-sslv.md"
+      ],
+      "price_usd": null,
+      "orbit_support_basis": {
+        "sso_500": "gameplay_assumption",
+        "sso_600": "published_capacity_point",
+        "sso_700": "gameplay_assumption"
+      },
+      "capacity_rule": "Use a capacity point only for its own orbit type and altitude. A LEO figure is never an SSO capacity."
+    },
+    {
+      "id": "vega_c",
+      "name": "Vega C",
+      "provider": "Arianespace / Avio",
+      "family": "dedicated_medium",
+      "price_type": "not_published",
+      "capacity_points": [
+        {
+          "orbit": "sso",
+          "altitude_km": 700,
+          "mass_kg": 2300
+        }
+      ],
+      "orbit_ids_supported": [
+        "sso_600",
+        "sso_700"
+      ],
+      "customer_chooses_orbit": true,
+      "flights": null,
+      "successes": null,
+      "reliability_as_of": null,
+      "value_notes": "2300 kg to 700 km SSO. Also sells rideshare slots (SSMS), price not retrieved. No price published; a third-party site estimates ~USD 17,000/kg (not used). Had a failure in 2022 (VV22) and returned to flight in 2024.",
+      "source_urls": [
+        "https://arianespace.com/?p=224",
+        "https://wikiwand.com/en/articles/Vega-C"
+      ],
+      "price_usd": null,
+      "orbit_support_basis": {
+        "sso_600": "gameplay_assumption",
+        "sso_700": "published_capacity_point"
+      },
+      "capacity_rule": "Use a capacity point only for its own orbit type and altitude. A LEO figure is never an SSO capacity."
+    },
+    {
+      "id": "spacex_falcon9_dedicated",
+      "name": "Falcon 9 (dedicated)",
+      "provider": "SpaceX",
+      "family": "dedicated_heavy",
+      "price_usd": 74000000,
+      "price_type": "published",
+      "capacity_points": [
+        {
+          "orbit": "leo",
+          "altitude_km": null,
+          "mass_kg": 22800
+        }
+      ],
+      "orbit_ids_supported": [
+        "leo_iss_400",
+        "leo_mid_inclination_550",
+        "sso_500",
+        "sso_600",
+        "sso_700"
+      ],
+      "customer_chooses_orbit": true,
+      "flights": null,
+      "successes": null,
+      "reliability_as_of": null,
+      "value_notes": "USD 74M 2026 list price. Massive overkill for this game's spacecraft: useful as a 'wrong answer' that wastes budget. SSO capacity not retrieved (it is lower than the LEO figure); SSO orbit ids are a gameplay assumption.",
+      "source_urls": [
+        "https://keeptrack.space/deep-dive/how-much-does-a-falcon-9-launch-cost",
+        "https://orbitalradar.com/launch-vehicles/electron"
+      ],
+      "orbit_support_basis": {
+        "leo_iss_400": "gameplay_assumption",
+        "leo_mid_inclination_550": "gameplay_assumption",
+        "sso_500": "gameplay_assumption",
+        "sso_600": "gameplay_assumption",
+        "sso_700": "gameplay_assumption"
+      },
+      "capacity_rule": "Use a capacity point only for its own orbit type and altitude. A LEO figure is never an SSO capacity."
+    }
+  ],
+  "notes": [
+    "null means not published or not retrieved. Never treat null as 0.",
+    "Fields ending in _derived, and every value in orbits, are computed from physics, not published. value_kind or value_notes says so.",
+    "'Gameplay assumption' in a value_notes marks a modelling choice made for the game, not a real-world fact.",
+    "Most peak or max figures are upper bounds; treat them as worst case.",
+    "Only a handful of components have a published price; see the handoff note for the list. The cost model is still a team decision.",
+    "v4 adds interpretation fields only: platforms.includes_*_hardware, adcs.pointing_metric / pointing_conditions / power_range_w, communication.can_receive_commands / ground_station_type, launch.orbit_support_basis / capacity_rule, propulsion.mass_rule.",
+    "electrical_power_v1.json from earlier is superseded by power_systems_v1.json and must not be loaded.",
+    "v5: bus_mass_kg filled for all three platforms. GSAT-20 and GSAT-50 are estimates; GSAT-200 is derived from brochure delta-v figures. None is a GITAI-published bus mass.",
+    "v5: GSAT-200 price conflict recorded in price_note (3.0M USD web page vs 3.5M USD 2025 brochure)."
+  ],
+  "value_kinds": {
+    "published": "from a source in source_urls",
+    "derived": "computed from published values or physics (all orbit values, every *_derived field)",
+    "estimate": "third-party estimate; not a published price or spec",
+    "gameplay_assumption": "a modelling choice for the game, marked in value_notes or *_basis fields"
+  }
+}
