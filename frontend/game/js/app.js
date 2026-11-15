@@ -97,5 +97,8 @@ async function boot() {
   if ((start === "designer" || start === "review") && !isSurface()) designer.evaluateNow();
 }
 
+// 3D views load on their own: if WebGL or the files are missing, the game still runs.
+import("./viewer3d.js").catch((err) => console.warn("3D view disabled:", err));
+
 window.addEventListener("unhandledrejection", (e) => toast(e.reason?.message || "Unexpected error", "error"));
 boot();

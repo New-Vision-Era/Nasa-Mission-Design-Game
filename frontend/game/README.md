@@ -61,7 +61,13 @@ The UI computes no score and invents no consequence: every number shown comes
 from the engine. `n/p` means not published; `*` marks an estimate or a gameplay
 assumption.
 
-## 3D views (for the visualization pair)
+## 3D views
+
+`js/viewer3d.js` draws into both windows (models in `models/`, see the README there): the designer shows
+the spacecraft assembled from the current design; operations shows it in orbit and, for Mars and Moon,
+landing on the ground. Drag to rotate, scroll to zoom. If WebGL is missing the window stays empty.
+
+### Hook for other visual systems
 
 Two empty containers are reserved and must stay free of UI:
 
