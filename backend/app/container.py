@@ -10,6 +10,7 @@ from backend.app.services.catalog_loader import load_catalog
 from backend.app.services.engine_adapter import EngineAdapter
 from backend.app.services.mission_service import MissionService
 from backend.app.services.run_service import RunService
+from backend.app.services.simulation_v4_service import SimulationV4Service
 from backend.app.storage.db import Database
 
 
@@ -21,6 +22,7 @@ class Container:
     auth: AuthService
     missions: MissionService
     runs: RunService
+    simulation_v4: SimulationV4Service
 
 
 def build_container(settings: Settings) -> Container:
@@ -34,4 +36,5 @@ def build_container(settings: Settings) -> Container:
         auth=AuthService(db, settings.session_ttl_hours),
         missions=MissionService(db, catalog),
         runs=RunService(db, catalog, engine),
+        simulation_v4=SimulationV4Service(db, settings.data_dir),
     )

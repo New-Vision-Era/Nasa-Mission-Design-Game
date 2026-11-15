@@ -3,7 +3,7 @@
 Game models (Design, Evaluation, RunState, Debrief...) live in simulation/models.py.
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -108,3 +108,28 @@ class RunSummary(BaseModel):
     score_total: Optional[float] = None
     created_at: str
     completed_at: Optional[str] = None
+
+
+# --- stored runs of the real-data engine (engine_v4) -----------------------
+
+
+class SimulationRunCreate(BaseModel):
+    configuration: dict[str, Any]  # validated by the engine (simulation/engine_v4/configuration.py)
+    scenario_parameters: Optional[dict[str, Any]] = None  # gameplay overrides; recorded with the run
+    seed: Optional[int] = Field(default=None, ge=0)  # fix it to replay a run exactly
+    name: Optional[str] = Field(default=None, min_length=1, max_length=80)
+
+
+class SimulationRunSummary(BaseModel):
+    """One row of a player's real-data mission history."""
+
+    run_id: str
+    name: Optional[str] = None
+    scenario_id: str
+    dataset_id: Optional[str] = None
+    seed: int
+    feasibility: str
+    outcome: str
+    score_total: Optional[float] = None
+    uses_parameter_overrides: bool = False
+    created_at: str

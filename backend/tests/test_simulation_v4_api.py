@@ -106,3 +106,44 @@ def test_v4_testbench_page_is_served(client):
 def test_existing_routes_still_work(client):
     assert client.get("/api/v1/health").json()["status"] == "ok"
     assert client.get("/api/v1/mars/catalog").status_code == 200
+
+
+# --- stored runs and history --------------------------------------------------
+
+
+def _login(client, name):
+    r = client.post("/api/v1/auth/register", json={"username": name, "password": "correct horse"})
+    assert r.status_code == 201, r.text
+    return {"Authorization": f"Bearer {r.json()['token']}"}
+
+
+def test_v4_launch_history_and_read_back(client):
+    ada, bob = _login(client, "ada"), _login(client, "bob")
+    r = client.post(f"{API}/runs", headers=ada, json={"configuration": CONFIG, "seed": 3, "name": "Demo"})
+    assert r.status_code == 201, r.text
+    run = r.json()
+    assert run["result"]["feasibility"]["status"] == "CONDITIONAL" and run["name"] == "Demo"
+
+    history = client.get(f"{API}/runs", headers=ada).json()
+    assert [h["run_id"] for h in history] == [run["run_id"]]
+    assert history[0]["outcome"] == "SUCCESS" and history[0]["seed"] == 3
+
+    assert client.get(f"{API}/runs/{run['run_id']}", headers=ada).json() == run
+    assert client.get(f"{API}/runs/{run['run_id']}", headers=bob).status_code == 404
+    assert client.get(f"{API}/runs/{run['run_id']}").status_code == 404
+    assert client.get(f"{API}/runs", headers=bob).json() == []
+    assert client.get(f"{API}/runs").status_code == 401
+
+
+def test_v4_guest_launch_and_infeasible_launch(client):
+    guest = client.post(f"{API}/runs", json={"configuration": CONFIG})
+    assert guest.status_code == 201
+    assert client.get(f"{API}/runs/{guest.json()['run_id']}").status_code == 200
+
+    bad = client.post(f"{API}/runs", json={"configuration": {**CONFIG, "instrument_ids": ["dragoneye"]}})
+    assert bad.status_code == 409
+    error = bad.json()["error"]
+    assert error["code"] == "not_launchable" and error["result"]["feasibility"]["status"] == "INFEASIBLE"
+
+    assert client.post(f"{API}/runs", json={"configuration": CONFIG, "seed": -1}).status_code == 422
+    assert client.post(f"{API}/runs", json={}).status_code == 422
