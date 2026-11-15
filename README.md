@@ -15,6 +15,7 @@ python -m pytest -q                                  # all tests
 uvicorn backend.app.main:create_app --factory --reload --port 8000
 ```
 
+**Play the game:** http://localhost:8000/ (the UI in `frontend/game/`, served by the backend).
 Interactive API docs: http://localhost:8000/docs
 
 Run every command from the repository root.
@@ -23,6 +24,7 @@ Run every command from the repository root.
 
 | Folder | Owner | What it is |
 | --- | --- | --- |
+| `frontend/game/` | Pair 2 | The playable game UI (plain JS modules, no build). See its README |
 | `backend/` | Pair 3 | FastAPI app: endpoints, accounts, storage |
 | `simulation/` | Person 2 | Pure engine. `engine.py` is **a placeholder model**; `engine_v4/` is the real-data engine. `models.py` is shared |
 | `data/` | Person 1 | Scenarios, components, events, sources. **Currently mock values** |
@@ -57,6 +59,12 @@ Run every command from the repository root.
 | `GET /simulation/runs` | yes | My stored real-data runs, newest first |
 | `GET /simulation/runs/{id}` | owner | One stored real-data run in full |
 | `GET /simulation/testbench` | no | Developer test page for the real-data engine |
+| `POST /simulation/evaluate` | no | Feasibility, constraints and MCAS risk, no mission started |
+| `POST /simulation/missions` | optional | Start an MCAS mission (stops at the first decision) |
+| `GET /simulation/missions` | yes | My MCAS missions, newest first |
+| `GET /simulation/missions/{id}` | owner | One MCAS mission state |
+| `POST /simulation/missions/{id}/decisions` | owner | Answer the pending anomaly |
+| `GET /simulation/missions/{id}/debrief` | owner | Debrief of a completed MCAS mission |
 
 The `/simulation/*` routes use the real-data engine in `simulation/engine_v4/`
 (see `frontend/ENGINE_V4_INTEGRATION.md`). Its runs are stored in their own table
@@ -76,7 +84,7 @@ Errors always look like `{"error": {"code": "...", "message": "...", "field": ".
 | `DATA_DIR` | `./data` | Catalog folder |
 | `CORS_ORIGINS` | `http://localhost:5173` | Comma-separated list |
 | `SESSION_TTL_HOURS` | `168` | Login lifetime |
-| `FRONTEND_DIST` | unset | Folder with the built frontend, served at `/` |
+| `FRONTEND_DIST` | `frontend/game` | Folder served at `/` (the game UI by default) |
 
 ## For Person 1 (data)
 

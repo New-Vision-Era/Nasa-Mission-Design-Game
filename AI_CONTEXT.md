@@ -367,9 +367,12 @@ proposal.**
 
 ### Stack
 
--   **Frontend (proposed):** React + TypeScript.
--   **Styling (proposed):** Tailwind CSS or a small consistent CSS
-    design system.
+-   **Frontend (implemented, 2026-11-15):** plain HTML, CSS and
+    JavaScript ES modules in `frontend/game/`, no build step, served
+    by the backend at `/`. (React + TypeScript was the earlier
+    proposal; see the decision log.)
+-   **Styling (implemented):** one CSS file with design tokens for the
+    team palette.
 -   **Backend (implemented):** Python 3.10+ and FastAPI, one process.
 -   **Simulation (implemented as a placeholder):** pure Python package
     with deterministic functions and tests.
@@ -957,8 +960,9 @@ demonstrate.
 **Status (2026-11-15):** Backend first version written. Real-data
 engine v4 integrated into the backend as additive endpoints, including
 stored runs and per-player history. Saved designs (`/missions`) and the
-`/runs` routes still use the placeholder engine and mock data. No game UI
-in this repository yet (only API bridge scripts in `frontend/`).
+`/runs` routes still use the placeholder engine and mock data. MCAS
+interactive missions have FastAPI routes. A complete playable game UI
+lives in `frontend/game/` and is served by the backend at `/`.
 
 ### Implemented
 
@@ -985,6 +989,15 @@ in this repository yet (only API bridge scripts in `frontend/`).
     `GET /simulation/runs`, `GET /simulation/runs/{run_id}`, with the
     same ownership and guest rules as the placeholder runs.
 
+-   Game UI (`frontend/game/`): home, briefing, engineering workspace
+    with live `POST /simulation/evaluate`, pre-launch validation, launch,
+    operations with MCAS decisions, results, debrief with a
+    `/simulation/recommend` suggestion, improve-and-replay, login,
+    register and mission history. Two empty 3D containers
+    (`#viewport-designer`, `#viewport-operations`) and a `smdg:state`
+    window event are reserved for the visualization pair (see
+    `frontend/game/README.md`).
+
 ### Test status (be honest about this)
 
 -   **Engine v4, run and passing:** 96 tests in
@@ -1006,9 +1019,21 @@ in this repository yet (only API bridge scripts in `frontend/`).
     followed by `python -m pytest -q` is their first real run. Treat any
     failure there as expected first-run fixing, not as a regression.
 
+-   **Game UI, play-tested but not through FastAPI:** the full journey
+    was played in headless Chrome at 1280×720, 1366×768 and 1920×1080
+    (no page scroll, no console error), including an infeasible design,
+    custom power, three MCAS decisions, a page reload mid-decision,
+    history and replay. FastAPI could not be installed there, so the
+    routes were served by a standard-library stand-in that calls the
+    same `SimulationV4Service` and `AuthService`. First run through
+    `uvicorn` is still to be done.
+
 ### Not implemented
 
--   Frontend, 3D visualization.
+-   3D visualization (containers reserved in the game UI).
+-   Lunar and Mars missions in the UI (shown as "Soon").
+-   Saved v4 design slots (the design is kept in the browser only).
+-   Multiplayer.
 -   Real scientific data and sources (Person 1).
 -   Real simulation, scoring and events (Person 2).
 -   "Experimental launch" of a design that fails a hard constraint.
@@ -1018,7 +1043,6 @@ in this repository yet (only API bridge scripts in `frontend/`).
 -   v4 engine behind the four-function interface. v4 runs and
     placeholder runs are stored and listed separately.
 -   Saved designs (`/missions`) for a v4 configuration.
--   Player decisions during v4 operations.
 -   Onboard storage limits, real reliability data, orbital lifetime,
     rocket-equation delta-v.
 
@@ -1026,7 +1050,8 @@ in this repository yet (only API bridge scripts in `frontend/`).
 
 -   [ ] Final project name and tagline.
 -   [x] Backend technology stack (section 7).
--   [ ] Frontend technology stack.
+-   [x] Frontend technology stack (vanilla JS modules; **needs Pair 2
+    confirmation**).
 -   [ ] GitHub repository URL.
 -   [ ] Team member names and pair assignments.
 -   [x] Actual repository structure, backend side (section 7).
@@ -1083,6 +1108,10 @@ Add a new entry whenever a major decision is made.
 | 2026-11-15 | Launch mass is judged at the stated bus mass; if the top of `bus_mass_range_kg` would exceed capacity the check is a `WARNING` | Bus masses are estimates; the margin must not look certain | Simulation, game rules |
 | 2026-11-15 | Stored runs (`POST /simulation/runs`) no longer accept `scenario_parameters` (422); the stateless `/simulation/run` stays the sandbox | Bus mass now comes from data, so overrides are no longer needed and a player cannot give themselves a bigger budget | Backend, frontend, game rules |
 | 2026-11-15 | Recommendations list only `FEASIBLE` designs; `CONDITIONAL` ones are returned separately | With real bus mass most designs are verifiable; an unverifiable launcher must not win because it cannot be checked | Simulation |
+| 2026-11-15 | Game UI built in `frontend/game/` with plain JS modules (no React, no build), served by the backend at `/` by default | Runs with `uvicorn` alone, no npm; the team's wireframe was plain HTML/CSS. **Needs Pair 2 confirmation** | Frontend, backend |
+| 2026-11-15 | The UI builds against the v4 configuration and the MCAS routes (`/simulation/evaluate`, `/simulation/missions*`), not the mock `Design` | MCAS is the only path with player decisions and real data | Frontend, backend |
+| 2026-11-15 | UI rules: no page scroll, minimal text, team palette, 3D windows left empty for the visualization pair | Team design brief | Frontend |
+| 2026-11-15 | Mission history in the UI lists MCAS missions only (`GET /simulation/missions`) | The game launches only MCAS missions | Frontend, backend |
 
 ### Current blockers
 
@@ -1097,8 +1126,11 @@ Add a new entry whenever a major decision is made.
 3.  Person 2: replace the placeholder bodies in `simulation/engine.py`.
 4.  Person 1: replace the mock values in `data/` and fill
     `data/sources.json`.
-5.  Pair 2: build against `data/fixtures/`, then the live API; add
-    login, register and history screens.
+5.  Pair 2: review `frontend/game/`; mount the 3D views in
+    `#viewport-designer` and `#viewport-operations` using the
+    `smdg:state` event.
+5b. Pair 3: run the game once through `uvicorn` (it was play-tested
+    only through a standard-library stand-in).
 6.  Decide where the demo runs.
 7.  Whole team: decide the open v4 questions: may `CONDITIONAL` designs
     launch; count subsystems against platform payload mass and power;

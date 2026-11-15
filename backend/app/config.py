@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_FRONTEND = REPO_ROOT / "frontend" / "game"
 
 @dataclass
 class Settings:
@@ -26,5 +27,8 @@ class Settings:
         if os.getenv("CORS_ORIGINS"):
             s.cors_origins = [o.strip() for o in os.environ["CORS_ORIGINS"].split(",") if o.strip()]
         if os.getenv("SESSION_TTL_HOURS"): s.session_ttl_hours = int(os.environ["SESSION_TTL_HOURS"])
-        if os.getenv("FRONTEND_DIST"): s.frontend_dist = Path(os.environ["FRONTEND_DIST"])
+        if os.getenv("FRONTEND_DIST"):
+            s.frontend_dist = Path(os.environ["FRONTEND_DIST"])
+        elif DEFAULT_FRONTEND.is_dir():
+            s.frontend_dist = DEFAULT_FRONTEND  # the game UI, served at http://localhost:8000/
         return s

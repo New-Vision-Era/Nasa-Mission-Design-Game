@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — Space Mission Design Game</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%230B132B%22/%3E%3Ctext x=%2216%22 y=%2222%22 font-size=%2218%22 text-anchor=%22middle%22 fill=%22%2300E5FF%22%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">✦</div>
+      <div><strong>MISSION CONTROL</strong><small>SPACE MISSION DESIGN</small></div>
+    </div>
+    <nav class="journey" id="journey" aria-label="Mission journey"></nav>
+    <div class="sidebar-bottom">
+      <small>ACTIVE MISSION</small>
+      <strong id="side-mission">EARTH WATCH</strong>
+      <small id="side-status">DESIGN PHASE</small>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar" id="topbar">
+      <div class="crumb">MISSION / <b id="crumb">CONTROL</b></div>
+      <div class="top-actions">
+        <span class="pill" id="api-pill"><i class="dot"></i> CONNECTING</span>
+        <button class="icon-btn small" id="top-history" title="Mission history" aria-label="Mission history"></button>
+        <button class="avatar" id="top-profile" title="Player profile" aria-label="Player profile">G</button>
+      </div>
+    </header>
+    <section class="screen" id="screen" aria-live="polite"></section>
+  </main>
+</div>
+<div class="modal-root" id="modal-root"></div>
+<div class="toast" id="toast" role="status"></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
