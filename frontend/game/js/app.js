@@ -1,5 +1,5 @@
 /* Entry point: loads reference data, restores the session and routes between screens. */
-import { api, hasToken } from "./api.js";
+import { api, hasToken, onEngineProgress, engineMode } from "./api.js";
 import { state, restore, notify, apiReady, subscribe, isSurface } from "./state.js";
 import "./sound.js";
 import * as surface from "./screens/surface.js";
@@ -67,9 +67,16 @@ async function boot() {
   subscribe((reason) => { if (reason === "auth" && state.screen === "home") go("home", { force: true }); });
   const saved = restore();
   const host = document.getElementById("screen");
-  host.append(el('<div class="page" style="display:grid;place-items:center"><div class="row"><span class="spinner"></span><span class="muted">Contacting mission control…</span></div></div>'));
+  host.append(el('<div class="page" style="display:grid;place-items:center"><div class="stack" style="align-items:center;gap:10px"><div class="row"><span class="spinner"></span><span class="muted" id="boot-msg">Contacting mission control…</span></div><p class="tiny" id="boot-note" style="text-align:center"></p></div></div>'));
+  const stopProgress = onEngineProgress((text) => {
+    const m = document.getElementById("boot-msg");
+    const n = document.getElementById("boot-note");
+    if (m && text !== "ready") m.textContent = text;
+    if (n) n.textContent = "The engine runs in your browser. The first visit downloads about 15 MB.";
+  });
   try {
     const [catalog, scenarios] = await Promise.all([api.catalog(), api.scenarios()]);
+    stopProgress();
     state.catalog = catalog;
     state.scenario = scenarios.scenarios.find((s) => s.id === state.config.scenario_id) || scenarios.scenarios[0];
   } catch (err) {
@@ -77,7 +84,7 @@ async function boot() {
     host.append(el(`<div class="page" style="display:grid;place-items:center;text-align:center"><div class="stack" style="align-items:center;max-width:440px">
       <div class="eyebrow">Link lost</div><h1 class="title">Mission control is offline</h1>
       <p class="muted">${esc(err.message)}</p>
-      <p class="tiny mono">uvicorn backend.app.main:create_app --factory --port 8000</p>
+      <p class="tiny mono">${engineMode() === "browser" ? "In-browser engine failed to start. Try another browser or reload." : "uvicorn backend.app.main:create_app --factory --port 8000"}</p>
       <button class="btn" onclick="location.reload()">RETRY</button></div></div>`));
     return;
   }

@@ -23,9 +23,38 @@ from backend.app.schemas import AuthResponse, User
 from backend.app.storage.db import Database, now_iso
 
 _SCRYPT = dict(n=2**14, r=8, p=1, dklen=32)
+# The hosted game runs this code in the browser (Pyodide), whose hashlib has neither scrypt nor
+# pbkdf2_hmac. There, passwords use PBKDF2-HMAC-SHA256 written below with hashlib.sha256 (standard
+# algorithm, RFC 8018), tagged "pbkdf2$" so a hash always verifies with the method that made it.
+# That database never leaves the player's browser.
+_PBKDF2_ITERATIONS = 20_000
+_PBKDF2_TAG = "pbkdf2$"
 
 
-def _hash_password(password: str, salt: bytes) -> str:
+def _pbkdf2_sha256(password: bytes, salt: bytes, iterations: int, dklen: int = 32) -> bytes:
+    key = hashlib.sha256(password).digest() if len(password) > 64 else password
+    key = key.ljust(64, b"\0")
+    inner, outer = hashlib.sha256(bytes(x ^ 0x36 for x in key)), hashlib.sha256(bytes(x ^ 0x5C for x in key))
+
+    def prf(msg: bytes) -> bytes:
+        i = inner.copy()
+        i.update(msg)
+        o = outer.copy()
+        o.update(i.digest())
+        return o.digest()
+
+    u = prf(salt + b"\x00\x00\x00\x01")
+    acc = int.from_bytes(u, "big")
+    for _ in range(iterations - 1):
+        u = prf(u)
+        acc ^= int.from_bytes(u, "big")
+    return acc.to_bytes(32, "big")[:dklen]
+
+
+def _hash_password(password: str, salt: bytes, stored: Optional[str] = None) -> str:
+    use_pbkdf2 = stored.startswith(_PBKDF2_TAG) if stored else not hasattr(hashlib, "scrypt")
+    if use_pbkdf2:
+        return _PBKDF2_TAG + _pbkdf2_sha256(password.encode("utf-8"), salt, _PBKDF2_ITERATIONS).hex()
     return hashlib.scrypt(password.encode("utf-8"), salt=salt, **_SCRYPT).hex()
 
 
@@ -58,7 +87,7 @@ class AuthService:
         row = self.db.query_one("SELECT * FROM users WHERE username = ?", (username,))
         # Hash even when the user is unknown so both cases take the same time.
         salt = bytes.fromhex(row["salt"]) if row else b"\x00" * 16
-        candidate = _hash_password(password, salt)
+        candidate = _hash_password(password, salt, row["password_hash"] if row else None)
         if row is None or not hmac.compare_digest(candidate, row["password_hash"]):
             raise ApiError(401, "invalid_credentials", "Wrong username or password.")
         return self._open_session(User(id=row["id"], username=row["username"], created_at=row["created_at"]))

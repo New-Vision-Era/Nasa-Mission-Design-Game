@@ -16,6 +16,12 @@ uvicorn backend.app.main:create_app --factory --reload --port 8000
 ```
 
 **Play the game:** http://localhost:8000/ (the UI in `frontend/game/`, served by the backend).
+
+**Hosted version (GitHub Pages):** every push to `final-version` publishes the game with
+`.github/workflows/pages.yml`. Pages cannot run Python servers, so the site runs the same backend
+code in the browser (Pyodide in a Web Worker, `frontend/game/js/engine-worker.js` +
+`backend/app/browser_api.py`); accounts and saved missions are stored in that browser.
+Build it yourself with `bash scripts/build_pages.sh` (output in `_site/`).
 Interactive API docs: http://localhost:8000/docs
 
 Run every command from the repository root.

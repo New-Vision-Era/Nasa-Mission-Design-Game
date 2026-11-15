@@ -1,11 +1,67 @@
-/* API client for the game. Talks to the FastAPI backend under /api/v1.
-   Served by the backend itself (same origin) by default; set window.GAME_API_BASE
-   before app.js loads to point elsewhere. */
+/* API client for the game. Two ways to reach the same backend code:
+
+   - server: the FastAPI backend under /api/v1 (uvicorn). Used when it answers.
+   - browser: the same Python backend running in the page (Pyodide in a Web Worker,
+     js/engine-worker.js). Used on GitHub Pages and whenever no server answers.
+
+   Force one with ?engine=server or ?engine=browser, or set window.GAME_API_BASE. */
 
 const BASE = window.GAME_API_BASE
   || (location.protocol.startsWith("http") && location.port !== "5500" && location.port !== "5173"
     ? `${location.origin}/api/v1`
     : "http://127.0.0.1:8000/api/v1");
+
+const forced = new URLSearchParams(location.search).get("engine");
+let mode = forced === "browser" || forced === "server" ? forced
+  : location.hostname.endsWith("github.io") ? "browser" : null;
+let modePromise = null;
+const progressListeners = new Set();
+export function onEngineProgress(fn) { progressListeners.add(fn); return () => progressListeners.delete(fn); }
+export const engineMode = () => mode;
+
+function resolveMode() {
+  if (mode) return Promise.resolve(mode);
+  if (!modePromise) {
+    modePromise = (async () => {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 1500);
+        const res = await fetch(`${BASE}/health`, { signal: ctrl.signal });
+        clearTimeout(timer);
+        mode = res.ok ? "server" : "browser";
+      } catch { mode = "browser"; }
+      return mode;
+    })();
+  }
+  return modePromise;
+}
+
+/* ---- in-browser backend (Web Worker) ---- */
+let worker = null;
+let nextId = 1;
+const pending = new Map();
+function engine() {
+  if (!worker) {
+    worker = new Worker(new URL("./engine-worker.js", import.meta.url));
+    worker.onmessage = (e) => {
+      const msg = e.data;
+      if (msg.type === "progress") { progressListeners.forEach((fn) => fn(msg.text)); return; }
+      const p = pending.get(msg.id);
+      if (p) { pending.delete(msg.id); p(msg); }
+    };
+    worker.onerror = (e) => {
+      for (const [id, p] of pending) { pending.delete(id); p({ status: 0, body: { error: { code: "engine_error", message: e.message || "The in-browser engine failed to start." } } }); }
+    };
+  }
+  return worker;
+}
+function browserRequest(method, path, body, tok) {
+  return new Promise((resolve) => {
+    const id = nextId++;
+    pending.set(id, resolve);
+    engine().postMessage({ id, method, path: `/api/v1${path}`, body, token: tok });
+  });
+}
 
 const TOKEN_KEY = "smdg.token";
 
@@ -35,6 +91,15 @@ export class ApiError extends Error {
 }
 
 async function request(method, path, body) {
+  if ((await resolveMode()) === "browser") {
+    const out = await browserRequest(method, path, body, token);
+    if (out.status === 204) return null;
+    if (out.status < 200 || out.status >= 300) {
+      if (out.status === 401 && token) setToken(null);
+      throw new ApiError(out.status, out.body);
+    }
+    return out.body;
+  }
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers["Content-Type"] = "application/json";

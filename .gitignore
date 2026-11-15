@@ -15,3 +15,7 @@ myenv/
 
 # home-screen videos are large: compress, then add on purpose with git add -f
 frontend/game/media/home/*.mp4
+
+# GitHub Pages build output
+_site/
+frontend/game/py/
