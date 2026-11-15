@@ -1,6 +1,8 @@
 /* Entry point: loads reference data, restores the session and routes between screens. */
 import { api, hasToken } from "./api.js";
-import { state, restore, notify, apiReady, subscribe } from "./state.js";
+import { state, restore, notify, apiReady, subscribe, isSurface } from "./state.js";
+import "./sound.js";
+import * as surface from "./screens/surface.js";
 import { el, toast, esc } from "./ui.js";
 import { loadMission } from "./screens/account.js";
 import * as home from "./screens/home.js";
@@ -13,9 +15,23 @@ import * as results from "./screens/results.js";
 import * as debrief from "./screens/debrief.js";
 
 const SCREENS = { home, briefing, designer, review, launch, operations, results, debrief };
+const SURFACE_SCREENS = { designer: surface.designer, review: surface.review, operations: surface.operations };
+const screenFor = (name) => (isSurface() && SURFACE_SCREENS[name]) || SCREENS[name];
 
 
 function canEnter(screen) {
+  if (isSurface()) {
+    const s = state.surface;
+    switch (screen) {
+      case "home": case "briefing": return true;
+      case "designer": return state.reached.briefing && Boolean(s.catalog);
+      case "review": return Boolean(s.catalog && s.evaluation);
+      case "launch": return Boolean(s.evaluation?.launchable) && !s.flight;
+      case "operations": return Boolean(s.flight) && s.flight.status !== "NOT_LAUNCHED";
+      case "results": case "debrief": return Boolean(state.debrief) && s.flight?.status === "COMPLETED";
+      default: return false;
+    }
+  }
   const done = state.mission?.status === "COMPLETED" || state.mission?.status === "NOT_LAUNCHED";
   switch (screen) {
     case "home": case "briefing": return true;
@@ -39,7 +55,7 @@ export function go(screen, opts = {}) {
   document.getElementById("app").dataset.screen = screen;
   const host = document.getElementById("screen");
   host.innerHTML = "";
-  current = SCREENS[screen];
+  current = screenFor(screen);
   const node = current.render({ go });
   host.append(node);
   current.mounted?.(node);
@@ -69,13 +85,16 @@ async function boot() {
     try { state.user = await api.me(); } catch { state.user = null; }
   }
 
+  if (isSurface()) {
+    try { await surface.loadCatalog(state.missionType); } catch { state.missionType = "earth"; }
+  }
   // Resume an unfinished mission if there was one.
-  if (saved?.missionId) {
+  if (saved?.missionId && !isSurface()) {
     try { await loadMission(saved.missionId, { go, silent: true }); return; } catch { /* fall through */ }
   }
   const start = saved?.screen && !["launch", "operations", "results", "debrief"].includes(saved.screen) ? saved.screen : "home";
   go(canEnter(start) ? start : "home", { force: true });
-  if (start === "designer" || start === "review") designer.evaluateNow();
+  if ((start === "designer" || start === "review") && !isSurface()) designer.evaluateNow();
 }
 
 window.addEventListener("unhandledrejection", (e) => toast(e.reason?.message || "Unexpected error", "error"));

@@ -1,7 +1,9 @@
 /* 08 · Engineering debrief: what worked, what to fix, and a concrete next design
    from the engine's optimizer (POST /simulation/recommend). */
 import { api } from "../api.js";
-import { state, notify, nameOf, resetMission } from "../state.js";
+import { state, notify, nameOf, resetMission, isSurface } from "../state.js";
+import { focusSurfaceSlot, diffSelections, SLOTS as SURF_SLOTS } from "./surface.js";
+const SURF_STEP = { launch_vehicle: "launch", adcs: "landing", communications: "comm" };
 import { el, actions, esc } from "../ui.js";
 import { STEP_TO_SLOT } from "../catalog.js";
 import { focusSlot, evaluateNow } from "./designer.js";
@@ -52,8 +54,9 @@ export function render({ go }) {
       <div class="card">
         <div class="eyebrow" style="color:var(--orange)">What to improve</div>
         ${improve.map((e) => {
-          const slot = STEP_TO_SLOT[e.related_step];
-          return `<div class="lesson"><span class="m ${e.kind === "unknown" ? "st-unknown" : "st-warn"}">${e.kind === "unknown" ? "?" : "!"}</span><span><span class="clamp2" title="${esc(prettyIds(e.message))}">${esc(firstSentence(e.message))}</span>${slot ? `<button data-action="fix" data-slot="${slot}">FIX ${esc(slot.toUpperCase())} →</button>` : ""}</span></div>`;
+          const slot = isSurface() ? (SURF_STEP[e.related_step] || e.related_step) : STEP_TO_SLOT[e.related_step];
+          const label = isSurface() ? SURF_SLOTS[slot]?.label : slot;
+          return `<div class="lesson"><span class="m ${e.kind === "unknown" ? "st-unknown" : "st-warn"}">${e.kind === "unknown" ? "?" : "!"}</span><span><span class="clamp2" title="${esc(prettyIds(e.message))}">${esc(firstSentence(e.message))}</span>${slot ? `<button data-action="fix" data-slot="${slot}">FIX ${esc((label || slot).toUpperCase())} →</button>` : ""}</span></div>`;
         }).join("") || '<p class="tiny">No weakness found by the engine.</p>'}
       </div>
       <div class="card">
@@ -74,6 +77,14 @@ export function render({ go }) {
 
   const toDesigner = (config) => {
     state.previous = { score: d.score.total ?? 0, outcome: d.outcome };
+    if (isSurface()) {
+      if (config) state.surface.selection = JSON.parse(JSON.stringify(config));
+      resetMission();
+      state.surface.evaluation = null;
+      notify("replay");
+      go("designer", { force: true });
+      return;
+    }
     if (config) state.config = JSON.parse(JSON.stringify(config));
     resetMission();
     state.evaluation = null;
@@ -86,7 +97,7 @@ export function render({ go }) {
     score: () => go("results"),
     home: () => { resetMission(); go("home"); },
     improve: () => toDesigner(d.configuration),
-    fix: (b) => { focusSlot(b.dataset.slot); toDesigner(d.configuration); },
+    fix: (b) => { (isSurface() ? focusSurfaceSlot : focusSlot)(b.dataset.slot); toDesigner(d.configuration); },
     load: () => suggestion && toDesigner(suggestion.configuration),
   });
 }
@@ -95,15 +106,16 @@ export async function mounted() {
   const d = state.debrief;
   const box = root?.querySelector("#sug");
   try {
-    const rec = await api.recommend(d.configuration);
+    const rec = isSurface() ? await api.surfaceRecommend(state.missionType, d.configuration) : await api.recommend(d.configuration);
     if (!root) return;
     const alts = rec.alternatives || [];
-    suggestion = alts.find((a) => diff(d.configuration, a.configuration).length) || null;
+    const differ = isSurface() ? diffSelections : diff;
+    suggestion = alts.find((a) => differ(d.configuration, a.configuration).length) || null;
     if (!suggestion) {
       box.innerHTML = '<span class="label">Engineers suggest</span><span class="tiny">Your design is already on the best trade-off curve.</span>';
       return;
     }
-    const changes = diff(d.configuration, suggestion.configuration).slice(0, 3);
+    const changes = differ(d.configuration, suggestion.configuration).slice(0, 3);
     box.innerHTML = `<div class="row"><span class="label">Engineers suggest</span><span class="tag">${esc(suggestion.label || "alternative")}</span></div>
       <div class="diff">${changes.map(([k, a, b]) => `<div><span class="dim" style="width:64px">${k}</span><s class="ellipsis">${esc(a)}</s>→<b class="ellipsis">${esc(b)}</b></div>`).join("")}</div>
       <button class="btn outline" style="height:32px" data-action="load">TRY THIS DESIGN</button>`;

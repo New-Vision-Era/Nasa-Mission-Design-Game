@@ -23,6 +23,10 @@ export function emptyConfig(scenarioId = SCENARIO_ID) {
   };
 }
 
+export function emptySelection() {
+  return { launch: null, power: null, comm: null, landing: null, instruments: [] };
+}
+
 export const state = {
   screen: "home",
   catalog: null,          // GET /simulation/catalog
@@ -39,7 +43,12 @@ export const state = {
   previous: null,         // last finished debrief, for compare & replay
   designer: { tab: "spacecraft", slot: "platform", page: 0, inspect: null },
   reached: { briefing: false, designer: false, review: false, operations: false, results: false },
+  // Mars rover / lunar lander (backend /surface/{mission})
+  surface: { catalog: null, selection: emptySelection(), evaluation: null, flight: null, decisions: {},
+             slot: "launch", page: 0, inspect: null },
 };
+
+export const isSurface = () => state.missionType === "moon" || state.missionType === "mars";
 
 const listeners = new Set();
 export function subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
@@ -49,6 +58,7 @@ export function save() {
     localStorage.setItem(SESSION_KEY, JSON.stringify({
       screen: state.screen, config: state.config, missionId: state.mission?.mission_id || null,
       reached: state.reached, missionType: state.missionType, previous: state.previous,
+      surfaceSelection: state.surface.selection,
     }));
   } catch { /* storage unavailable: the game still works for this visit */ }
 }
@@ -60,6 +70,8 @@ export function restore() {
     if (raw.config) state.config = { ...emptyConfig(), ...raw.config, power: { ...emptyConfig().power, ...(raw.config.power || {}) } };
     if (raw.reached) state.reached = { ...state.reached, ...raw.reached };
     if (raw.previous) state.previous = raw.previous;
+    if (raw.missionType) state.missionType = raw.missionType;
+    if (raw.surfaceSelection) state.surface.selection = { ...emptySelection(), ...raw.surfaceSelection };
     return raw;
   } catch { return null; }
 }
@@ -71,9 +83,10 @@ export function notify(reason) {
     detail: {
       reason,
       screen: state.screen,
-      configuration: state.config,
+      missionType: state.missionType,
+      configuration: state.missionType === "earth" ? state.config : state.surface.selection,
       evaluation: state.evaluation,
-      mission: state.mission?.state || null,
+      mission: state.missionType === "earth" ? (state.mission?.state || null) : state.surface.flight,
       shownPeriod: state.shownPeriod,
     },
   }));
@@ -164,6 +177,8 @@ export function changeQty(r, delta) {
 
 export function resetMission() {
   state.mission = null;
+  state.surface.flight = null;
+  state.surface.decisions = {};
   state.debrief = null;
   state.shownPeriod = 0;
   state.reached.operations = false;

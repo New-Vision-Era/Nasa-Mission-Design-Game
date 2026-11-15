@@ -12,3 +12,6 @@ dist/
 # Local Python environments
 .venv/
 myenv/
+
+# home-screen videos are large: compress, then add on purpose with git add -f
+frontend/game/media/home/*.mp4

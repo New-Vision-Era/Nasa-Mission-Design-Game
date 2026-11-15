@@ -71,6 +71,11 @@ export const api = {
     request("POST", `${sim}/missions/${encodeURIComponent(id)}/decisions`, { anomaly_id: anomalyId, response_id: responseId }),
   debrief: (id) => request("GET", `${sim}/missions/${encodeURIComponent(id)}/debrief`),
   history: () => request("GET", `${sim}/missions?limit=50`),
+  // surface missions (Mars rover, lunar lander)
+  surfaceCatalog: (mission) => request("GET", `/surface/${mission}/catalog`),
+  surfaceEvaluate: (mission, selection) => request("POST", `/surface/${mission}/evaluate`, { selection }),
+  surfaceFly: (mission, selection, decisions) => request("POST", `/surface/${mission}/fly`, { selection, decisions: decisions || {} }),
+  surfaceRecommend: (mission, selection) => request("POST", `/surface/${mission}/recommend`, { selection }),
   // accounts
   register: (username, password) => request("POST", "/auth/register", { username, password }),
   login: (username, password) => request("POST", "/auth/login", { username, password }),

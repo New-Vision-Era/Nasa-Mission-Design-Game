@@ -115,6 +115,7 @@ export async function openHistory({ go }) {
 /* Open a stored mission: completed -> report, in flight -> operations. */
 export async function loadMission(id, { go, silent = false } = {}) {
   const view = await api.getMission(id);
+  state.missionType = "earth";
   state.mission = view;
   state.config = JSON.parse(JSON.stringify(view.state.configuration));
   state.reached = { briefing: true, designer: true, review: true, operations: true, results: view.status === "COMPLETED" };

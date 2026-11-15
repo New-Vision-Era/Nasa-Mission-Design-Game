@@ -194,7 +194,7 @@ function paintParts() {
     if (mode === "platform_payload_budget") {
       const pf = rec("platforms", state.config.platform_id);
       pager.innerHTML = "";
-      host.innerHTML = `${toggle}<div class="parts" style="--parts-h:${partsHeight()}px;grid-template-columns:1fr;grid-template-rows:1fr;margin-top:8px">
+      host.innerHTML = `${toggle}<div class="parts" style="--parts-h:${partsHeight()}px;grid-template-columns:1fr;grid-template-rows:minmax(132px,auto);margin-top:8px">
         <div class="empty-note"><div><b>${pf ? unit(pf.payload_average_power_w, "W", 0) : "—"}</b>${pf ? `supplied to the payload by ${esc(pf.name)}` : "Pick a platform first"}</div></div></div>`;
       return;
     }

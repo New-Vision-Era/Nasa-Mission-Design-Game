@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from backend.app.api import auth, catalog, evaluate, mars, missions, runs, simulation_v4
+from backend.app.api import auth, catalog, evaluate, mars, missions, runs, simulation_v4, surface
 from backend.app.config import Settings
 from backend.app.container import build_container
 from backend.app.errors import ApiError
@@ -45,7 +45,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
 
     # Earth-observation routes are preserved; the Mars rover API and the
     # real-data simulation engine (simulation/engine_v4, data/equipment_v5.json) are additive.
-    for module in (catalog, evaluate, auth, missions, runs, mars, simulation_v4):
+    for module in (catalog, evaluate, auth, missions, runs, mars, simulation_v4, surface):
         app.include_router(module.router, prefix=API_PREFIX)
 
     if settings.frontend_dist and settings.frontend_dist.is_dir():

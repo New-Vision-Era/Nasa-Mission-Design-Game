@@ -1,20 +1,53 @@
-/* 05 · Launch sequence. The countdown runs while the backend starts the MCAS mission
-   (POST /simulation/missions); the animation only finishes once the mission exists. */
+/* 05 · Launch sequence, for every mission type. The countdown follows the countdown recording
+   (one number every COUNTDOWN_STEP_MS) while the backend starts the mission:
+   Earth -> POST /simulation/missions, Mars/Moon -> POST /surface/{mission}/fly.
+   A risky launch can end here (ascent or orbit-insertion failure) or report damage. */
 import { api } from "../api.js";
-import { state, notify, nameOf, rec } from "../state.js";
+import { state, notify, nameOf as earthName, rec as earthRec, isSurface } from "../state.js";
 import { el, actions, esc, sleep, toast } from "../ui.js";
+import { nameOf as surfName } from "./surface.js";
+import * as sound from "../sound.js";
 
 const STAGES = ["Final checks", "Countdown", "Liftoff", "Deployment", "Orbit insertion"];
 let root = null;
 let alive = false;
 
-export function render({ go }) {
+/* What the launch screen needs, whatever the mission. */
+function view() {
+  if (isSurface()) {
+    const s = state.surface;
+    const ev = s.evaluation;
+    return {
+      launcher: surfName("launch", s.selection.launch),
+      mass: ev?.resources?.mass_kg,
+      target: s.catalog.mission.cruise.title.replace(" cruise", "") + " transfer",
+      verdict: ev?.launch_assessment?.status,
+      risks: ev?.launch_assessment?.risks || [],
+      start: () => api.surfaceFly(state.missionType, s.selection, {}),
+      accept: (res) => { s.flight = res; return { status: res.status, loss: res.launch_assessment?.total_loss, debrief: res.debrief }; },
+    };
+  }
   const ev = state.evaluation;
-  const mass = ev?.resources?.total_spacecraft_mass_kg?.value;
-  const orbit = rec("orbits", state.config.orbit_id);
+  return {
+    launcher: earthName(state.config.launch_vehicle_id),
+    mass: ev?.resources?.total_spacecraft_mass_kg?.value,
+    target: earthRec("orbits", state.config.orbit_id)?.name || "—",
+    verdict: ev?.launch_assessment?.status,
+    risks: ev?.launch_assessment?.risks || [],
+    start: () => api.startMission(state.config, `Earth Watch · ${earthName(state.config.platform_id)}`),
+    accept: (m) => {
+      state.mission = m;
+      state.shownPeriod = 0;
+      return { status: m.status, loss: m.state.launch_assessment?.total_loss, debrief: m.debrief };
+    },
+  };
+}
+
+export function render({ go }) {
+  const v = view();
   root = el(`<div class="page">
     <div class="head">
-      <div><div class="eyebrow">Phase 03 · Launch operations</div><h1 class="title">Go for launch</h1></div>
+      <div class="head-title"><div class="eyebrow">Phase 03 · Launch operations</div><h1 class="title">Go for launch</h1></div>
       <span class="pill cyan" id="l-pill">AWAITING COMMAND</span>
     </div>
     <div class="launch">
@@ -25,10 +58,10 @@ export function render({ go }) {
       </div>
       <div class="card stack" style="gap:14px">
         <div class="kv">
-          <div><span>Launcher</span><b>${esc(nameOf(state.config.launch_vehicle_id))}</b></div>
-          <div><span>Spacecraft</span><b>${mass != null ? `${mass.toFixed(1)} kg` : "—"}</b></div>
-          <div><span>Target orbit</span><b>${esc(orbit?.name || "—")}</b></div>
-          <div><span>Launch review</span><b class="${{ GO: "st-ok", RISKY: "st-warn", NO_GO: "st-fail" }[ev?.launch_assessment?.status] || ""}">${esc((ev?.launch_assessment?.status || "—").replace("_", " "))}</b></div>
+          <div><span>Launcher</span><b>${esc(v.launcher)}</b></div>
+          <div><span>Spacecraft</span><b>${v.mass != null ? `${(+v.mass).toFixed(1)} kg` : "—"}</b></div>
+          <div><span>Target</span><b>${esc(v.target)}</b></div>
+          <div><span>Launch review</span><b class="${{ GO: "st-ok", RISKY: "st-warn", NO_GO: "st-fail" }[v.verdict] || ""}">${esc((v.verdict || "—").replace("_", " "))}</b></div>
         </div>
         <div class="divider"></div>
         <p class="tiny st-warn" id="l-why" style="display:none"></p>
@@ -39,14 +72,18 @@ export function render({ go }) {
     </div>
   </div>`);
   alive = true;
-  actions(root, {
+  return actions(root, {
     back: () => go("review"),
     ignite: () => ignite(go),
     report: () => go("results", { force: true }),
   });
-  return root;
 }
-export function leave() { alive = false; root = null; }
+export function leave() {
+  alive = false;
+  root = null;
+  sound.stop("countdown", 400);
+  sound.stop("launch", 1500);
+}
 
 function stage(i, done = false) {
   if (!root) return;
@@ -57,67 +94,81 @@ function stage(i, done = false) {
 }
 
 async function ignite(go) {
-  const goBtn = root.querySelector("#l-go");
-  goBtn.disabled = true;
+  const v = view();
+  root.querySelector("#l-go").disabled = true;
   root.querySelector("#l-back").disabled = true;
   const t = root.querySelector("#l-t");
   const s = root.querySelector("#l-s");
-  root.querySelector("#l-pill").textContent = "SEQUENCE ACTIVE";
   const pill = root.querySelector("#l-pill");
+  const why = root.querySelector("#l-why");
+  pill.textContent = "SEQUENCE ACTIVE";
   stage(0);
-  const name = `Earth Watch · ${nameOf(state.config.platform_id)}`;
-  const started = api.startMission(state.config, name).then((m) => ({ m }), (err) => ({ err }));
-  await sleep(700);
+  const started = v.start().then((m) => ({ m }), (err) => ({ err }));
+  await sleep(600);
+  if (!alive) return;
   stage(1);
-  for (let n = 10; n >= 0 && alive; n--) {
-    t.textContent = n === 0 ? "T−0" : `T−${n}`;
-    s.textContent = n > 3 ? "AUTOMATED SEQUENCE" : n > 0 ? "MAIN ENGINE START" : "LIFTOFF";
-    await sleep(320);
+  sound.ambient(false);
+  sound.play("countdown", { volume: 0.9 });
+  for (let n = 10; n >= 1 && alive; n--) {
+    t.textContent = `T−${n}`;
+    s.textContent = n > 3 ? "AUTOMATED SEQUENCE" : "MAIN ENGINE START";
+    await sleep(sound.COUNTDOWN_STEP_MS);
   }
+  if (!alive) return;
   const { m, err } = await started;
   if (!alive) return;
   if (err) {
-    t.textContent = "HOLD"; t.classList.remove("go");
+    sound.stop("countdown", 300);
+    t.textContent = "HOLD";
     s.textContent = "LAUNCH SCRUBBED";
     pill.textContent = "SCRUB";
+    sound.blip("error");
     toast(err.message, "error");
     root.querySelector("#l-back").disabled = false;
+    sound.ambient(true);
     return;
   }
-  state.mission = m;
-  state.shownPeriod = 0;
+  const r = v.accept(m);
   state.reached.operations = true;
   notify("launched");
-  if (m.status === "NOT_LAUNCHED") {
+  if (r.status === "NOT_LAUNCHED") {
+    sound.stop("countdown", 300);
     toast("Launch refused: the design is catastrophically out of limits.", "error");
     state.mission = null;
+    state.surface.flight = null;
     go("review");
     return;
   }
-  const la = m.state.launch_assessment;
-  const loss = la?.total_loss;
+
   const trail = root.querySelector("#l-trail");
+  t.textContent = "T−0";
   stage(2);
+  sound.play("launch", { volume: 0.85 });
+  await sleep(500);
+  if (!alive) return;
   t.textContent = "LIFTOFF"; t.classList.add("go");
-  s.textContent = nameOf(state.config.launch_vehicle_id).toUpperCase();
+  s.textContent = v.launcher.toUpperCase();
   trail.classList.add("fly");
   root.querySelector("#l-glow").classList.add("on");
 
-  if (loss) {
+  const loss = r.loss;
+  if (loss && ["launch", "orbit_insertion", "commissioning"].includes(loss.stage)) {
     const at = { launch: 2, orbit_insertion: 4, commissioning: 4 }[loss.stage];
     if (at > 2) { await sleep(1400); if (!alive) return; stage(3); s.textContent = "SPACECRAFT SEPARATION"; await sleep(900); if (!alive) return; stage(4); }
     if (loss.stage === "commissioning") { stage(4, true); s.textContent = "ACQUIRING SIGNAL…"; await sleep(1600); if (!alive) return; }
     else await sleep(900);
     if (!alive) return;
+    sound.stop("launch", 300);
+    sound.play(loss.stage === "commissioning" ? "alarm" : "explosion", { volume: 0.9 });
     trail.classList.add("lost");
     root.querySelectorAll(".stage")[at].classList.add("fail");
     t.classList.remove("go"); t.classList.add("lost");
     t.textContent = { launch: "VEHICLE LOST", orbit_insertion: "WRONG ORBIT", commissioning: "NO SIGNAL" }[loss.stage];
     s.textContent = "MISSION LOST";
     pill.textContent = "FAILURE";
-    root.querySelector("#l-why").textContent = loss.reason;
-    root.querySelector("#l-why").style.display = "";
-    state.debrief = m.debrief;
+    why.textContent = loss.reason;
+    why.style.display = "";
+    state.debrief = r.debrief;
     state.reached.results = true;
     notify("lost");
     const btn = root.querySelector("#l-go");
@@ -130,16 +181,19 @@ async function ignite(go) {
   await sleep(1500); if (!alive) return;
   stage(3); s.textContent = "SPACECRAFT SEPARATION";
   await sleep(1000); if (!alive) return;
-  stage(4); s.textContent = "ORBIT INSERTION";
+  stage(4); s.textContent = isSurface() ? "TRANSFER BURN" : "ORBIT INSERTION";
   await sleep(900); if (!alive) return;
   stage(4, true);
-  if (la && la.status === "RISKY") {
+  if (v.verdict === "RISKY") {
     root.querySelectorAll(".stage")[4].classList.add("warn");
     pill.textContent = "DAMAGED";
-    s.textContent = "IN ORBIT · DAMAGE REPORTED";
-    root.querySelector("#l-why").textContent = la.risks.map((r) => r.consequence).join(" ");
-    root.querySelector("#l-why").style.display = "";
+    s.textContent = "ON COURSE · DAMAGE REPORTED";
+    why.textContent = v.risks.map((x) => x.consequence).join(" ");
+    why.style.display = "";
+    sound.blip("error");
     await sleep(2600); if (!alive) return;
   }
+  sound.stop("launch", 2000);
+  sound.ambient(true);
   go("operations");
 }

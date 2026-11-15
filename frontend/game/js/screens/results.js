@@ -1,6 +1,7 @@
 /* 07 · Mission report: score and outcome straight from the engine's debrief. */
 import { state } from "../state.js";
 import { el, actions, esc, pct } from "../ui.js";
+import * as sound from "../sound.js";
 
 const OUTCOME_TEXT = { SUCCESS: "Mission successful", PARTIAL_SUCCESS: "Partial success", FAILURE: "Mission failed", NOT_LAUNCHED: "Not launched" };
 const CAT_SHORT = { science: "Science", objectives: "Objectives", reliability: "Reliability", efficiency: "Efficiency" };
@@ -68,4 +69,5 @@ export function mounted(node) {
     if (k < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
+  setTimeout(() => sound.blip(state.debrief.outcome === "SUCCESS" ? "success" : "fail"), 1300);
 }

@@ -5,6 +5,7 @@
 import { api } from "../api.js";
 import { state, notify, nameOf, anyRec } from "../state.js";
 import { el, actions, esc, openModal, sleep, toast } from "../ui.js";
+import * as sound from "../sound.js";
 
 let root = null;
 let alive = false;
@@ -154,6 +155,7 @@ async function play() {
     while (alive && state.shownPeriod < target) {
       state.shownPeriod += 1;
       paintPeriod(state.shownPeriod);
+      sound.blip("tick");
       notify("period");
       await sleep(900 / speed);
     }
@@ -167,6 +169,7 @@ async function play() {
       state.debrief = state.mission.debrief;
       state.reached.results = true;
       notify("completed");
+      sound.blip(st.outcome === "SUCCESS" ? "success" : "fail");
       phase("d");
       setStatus("done");
       for (let p = st.timeline.length + 1; p <= st.total_periods; p++) {
@@ -182,11 +185,23 @@ async function play() {
 }
 
 function openDecision(pd) {
+  decisionModal(pd, async (choice) => {
+    const view = await api.decide(state.mission.mission_id, pd.anomaly_id, choice);
+    state.mission = view;
+    setStatus("ok");
+    notify("decision");
+    play();
+  });
+}
+
+/* The anomaly decision window, shared by every mission type. submit(choiceId) may throw. */
+export function decisionModal(pd, submit) {
+  sound.play("alarm", { volume: 0.55 });
   let choice = (pd.responses.find((r) => r.is_default && r.available) || pd.responses.find((r) => r.available))?.id;
   const letters = "ABCDEF";
   const content = el(`<div class="stack" style="gap:14px">
     <div class="alert-head"><span class="tag fail">⚠ ${esc(pd.category === "engineering" ? "Engineering anomaly" : "External event")} · ${esc(SYSTEM_LABEL[pd.affected_system] || pd.affected_system)}</span>
-      <span class="tiny mono">DAY ${String(Math.round(pd.elapsed_days)).padStart(3, "0")} · P${String(pd.period).padStart(2, "0")}</span></div>
+      <span class="tiny mono">DAY ${String(Math.round(pd.elapsed_days)).padStart(3, "0")}${pd.period ? ` · P${String(pd.period).padStart(2, "0")}` : ""}</span></div>
     <h2 class="event-title">${esc(pd.name)}</h2>
     <div class="event-grid">
       <div class="stack">
@@ -209,6 +224,7 @@ function openDecision(pd) {
   const { close } = openModal(content, { wide: true, dismissible: false });
   content.querySelectorAll(".choice").forEach((b) => b.addEventListener("click", () => {
     choice = b.dataset.id;
+    sound.blip("select");
     content.querySelectorAll(".choice").forEach((x) => x.classList.toggle("selected", x === b));
   }));
   const confirm = content.querySelector("#ev-confirm");
@@ -217,13 +233,8 @@ function openDecision(pd) {
     confirm.disabled = true;
     confirm.innerHTML = '<span class="spinner"></span> TRANSMITTING';
     try {
-      const view = await api.decide(state.mission.mission_id, pd.anomaly_id, choice);
+      await submit(choice);
       close();
-      state.mission = view;
-      // The decided period is now part of the timeline; replay from where we stopped.
-      setStatus("ok");
-      notify("decision");
-      play();
     } catch (err) {
       confirm.disabled = false;
       confirm.textContent = "CONFIRM DECISION";

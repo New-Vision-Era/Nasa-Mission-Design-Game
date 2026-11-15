@@ -85,8 +85,21 @@ window.addEventListener("smdg:state", (e) => {
 Screens are rebuilt on navigation, so re-attach your canvas when `reason === "screen"`
 and the container exists again.
 
+## Missions
+
+- **Earth observation**: engine v4 + MCAS (`/simulation/*`), real equipment data.
+- **Mars rover** and **lunar lander**: `/surface/{mars,moon}/*` (`backend/app/services/surface_mission.py`).
+  Mars uses the team's rover prototype values; the Moon uses illustrative game values that still need
+  sourcing. Same screens; `js/screens/surface.js` holds their designer, review and operations.
+
+## Sound and video
+
+- `audio/`: countdown, launch, explosion, alarm and cockpit ambience from the team's `main` branch,
+  trimmed and compressed. Interface blips are synthesised (`js/sound.js`). Press **M** to mute.
+- `media/home/{earth,moon,mars}.mp4`: home background video for the selected mission (see the README there).
+
 ## Not done yet
 
-- Lunar and Mars missions are shown as "Soon" (the engine refuses them).
+- History and saves for Mars and Moon missions (Earth missions only).
 - Saved design slots: the current design is kept in the browser only.
 - Multiplayer (the wireframe's player-count selector) is not implemented.

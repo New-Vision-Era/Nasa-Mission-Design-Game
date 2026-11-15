@@ -1019,6 +1019,8 @@ lives in `frontend/game/` and is served by the backend at `/`.
     followed by `python -m pytest -q` is their first real run. Treat any
     failure there as expected first-run fixing, not as a regression.
 
+-   **Surface missions:** 10 tests in `backend/tests/test_surface_mission.py`, run and passing
+    (FastAPI route file `backend/app/api/surface.py` not run: no FastAPI here).
 -   **Risky launches:** 7 tests in
     `simulation/engine_v4/tests/test_launch_risk.py`, run and passing.
 -   **Game UI, play-tested but not through FastAPI:** the full journey
@@ -1033,7 +1035,8 @@ lives in `frontend/game/` and is served by the backend at `/`.
 ### Not implemented
 
 -   3D visualization (containers reserved in the game UI).
--   Lunar and Mars missions in the UI (shown as "Soon").
+-   Sourced lunar equipment data (the Moon mission runs on illustrative game values).
+-   History and saves for Mars and Moon missions.
 -   Saved v4 design slots (the design is kept in the browser only).
 -   Multiplayer.
 -   Real scientific data and sources (Person 1).
@@ -1115,6 +1118,8 @@ Add a new entry whenever a major decision is made.
 | 2026-11-15 | UI rules: no page scroll, minimal text, team palette, 3D windows left empty for the visualization pair | Team design brief | Frontend |
 | 2026-11-15 | Mission history in the UI lists MCAS missions only (`GET /simulation/missions`) | The game launches only MCAS missions | Frontend, backend |
 | 2026-11-15 | **Risky launches (MCAS only).** Supersedes "a design failing a hard constraint cannot launch" for interactive missions: only *catastrophic* designs are refused (no instrument, no radio, a numeric hard check more than 2x over its limit, budget more than 1.5x). Smaller hard failures launch and become consequences: lost at ascent, orbit insertion or commissioning, shortened life, or reduced science capacity; science and reliability scores are gated by what was actually flown. Rules in `simulation/engine_v4/mission/mcas/launch_risk.py`, all labelled gameplay assumptions. The one-call `/simulation/run` and `/simulation/runs` keep the old rule | Team wants players to be able to make mistakes and see them fail in flight, not be blocked by a strict check | Simulation, game rules, frontend, scoring |
+| 2026-11-15 | **Lunar and Mars missions playable** through one surface-mission engine (`backend/app/services/surface_mission.py`, routes `/api/v1/surface/{mars,moon}/...`): GO / RISKY / NO_GO launch rule as on Earth, one landing-site decision, score with the same four categories and weights. Mars reuses the team's rover prototype values (`mars_mission.py`, unchanged, `/mars` routes unchanged). **Moon values are illustrative game values written for the game, not researched**: Person 1 should replace them with sourced values (same structure). Surface missions are not stored in the mission history | Team wants all three missions playable now | Backend, frontend, data, game rules |
+| 2026-11-15 | Sounds from the `main` branch (countdown, launch, explosion, alarm, cockpit ambience) trimmed into `frontend/game/audio/`; interface blips synthesised in the browser; M toggles mute. Home background videos per mission in `frontend/game/media/home/{earth,moon,mars}.mp4`, git-ignored because the originals are ~900 MB | Team assets; GitHub refuses files over 100 MB | Frontend |
 | 2026-11-15 | UI: sidebar and top bar removed; profile and saves icons on the home screen only; palette changed to `--bg #141210`, `--panel #1e1b18`, `--panel2 #282420`, `--line #3a3430`, `--text #f7f4ef`, `--muted #a39b93`, `--accent #d97706`, `--green #059669`, `--yellow #d97706`, `--red #dc2626` | Team design decision | Frontend |
 
 ### Current blockers
