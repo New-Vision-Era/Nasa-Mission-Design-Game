@@ -24,7 +24,7 @@ Run every command from the repository root.
 | Folder | Owner | What it is |
 | --- | --- | --- |
 | `backend/` | Pair 3 | FastAPI app: endpoints, accounts, storage |
-| `simulation/` | Person 2 | Pure engine. **Currently a placeholder model.** `models.py` is shared |
+| `simulation/` | Person 2 | Pure engine. `engine.py` is **a placeholder model**; `engine_v4/` is the real-data engine. `models.py` is shared |
 | `data/` | Person 1 | Scenarios, components, events, sources. **Currently mock values** |
 | `data/fixtures/` | Pair 3 | Example requests and responses for the frontend mocks |
 | `scripts/` | Pair 3 | `make_fixtures.py` regenerates the fixtures |
@@ -49,6 +49,15 @@ Run every command from the repository root.
 | `GET /runs` | yes | My mission history, newest first |
 | `GET /runs/{id}` | owner | One run in full: design flown, log, debrief |
 | `POST /runs/{id}/decisions` | owner | Answer the pending event |
+| `GET /simulation/catalog` | no | Real component catalog (`data/equipment_v4.json`) |
+| `GET /simulation/scenarios` | no | Real-data scenarios and their gameplay parameters |
+| `POST /simulation/run` | no | Real-data engine: constraints, score, mission, debrief |
+| `POST /simulation/recommend` | no | Alternative designs (Pareto filter) |
+| `GET /simulation/testbench` | no | Developer test page for the real-data engine |
+
+The `/simulation/*` routes use the real-data engine in `simulation/engine_v4/`
+(see `frontend/ENGINE_V4_INTEGRATION.md`). Saved missions, runs and history
+still use the placeholder engine and mock data.
 
 Send the token as `Authorization: Bearer <token>`.
 
