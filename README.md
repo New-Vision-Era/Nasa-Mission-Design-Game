@@ -1,3 +1,5 @@
+# 🚀 [▶ PLAY THE GAME — click here to try it](https://soukisami.github.io/Nasa-Mission-Design-Game/frontend/game/)
+
 # GitHub Pages build
 
 This branch is only the published website: the landing page (from `website/` on the `game` branch) at the root,
