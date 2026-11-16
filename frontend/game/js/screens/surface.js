@@ -3,7 +3,7 @@
    Same layout and rules as the Earth-observation screens; equipment values are illustrative. */
 import { api } from "../api.js";
 import { state, notify, emptySelection } from "../state.js";
-import { el, actions, esc, STATUS_GLYPH, sleep } from "../ui.js";
+import { el, actions, esc, STATUS_GLYPH, sleep, compareBars, fitChips, specTiles } from "../ui.js";
 import { ICONS } from "../catalog.js";
 import * as sound from "../sound.js";
 import { decisionModal } from "./operations.js";
@@ -78,6 +78,14 @@ function specs(cat, r) {
     default: return [["Science value", `${r.scienceValue} pts`], ["Power", `${r.powerW} W`], ...base];
   }
 }
+const money = (v) => `$${v}M`;
+const SURFACE_METRICS = {
+  launch: [["Lift capacity", (x) => x.payloadKg, "high", (v) => `${v} kg`], ["Cost", (x) => x.cost, "low", money]],
+  power: [["Power", (x) => x.powerW, "high", (v) => `${v} W`], ["Mass", (x) => x.mass, "low", (v) => `${v} kg`], ["Cost", (x) => x.cost, "low", money]],
+  comm: [["Data home", (x) => x.efficiency, "high", (v) => `${Math.round(v * 100)}%`], ["Mass", (x) => x.mass, "low", (v) => `${v} kg`], ["Cost", (x) => x.cost, "low", money]],
+  landing: [["Reliability", (x) => x.reliability, "high", (v) => `${Math.round(v * 100)}%`], ["Mass", (x) => x.mass, "low", (v) => `${v} kg`], ["Cost", (x) => x.cost, "low", money]],
+  instruments: [["Science", (x) => x.scienceValue, "high", (v) => `${v} pts`], ["Power draw", (x) => x.powerW, "low", (v) => `${v} W`], ["Mass", (x) => x.mass, "low", (v) => `${v} kg`], ["Cost", (x) => x.cost, "low", money]],
+};
 const VERDICT = { GO: ["Ready to fly", "ok"], RISKY: ["Risky launch", "warn"], NO_GO: ["Launch blocked", "fail"] };
 
 /* ================= DESIGNER ================= */
@@ -110,7 +118,7 @@ export const designer = (() => {
     return actions(root, {
       back: () => go("briefing"),
       review: () => go("review"),
-      slot: (b) => { surf().slot = b.dataset.slot; surf().page = 0; surf().inspect = null; paint(); },
+      slot: (b) => { surf().slot = b.dataset.slot; surf().page = 0; surf().inspect = null; paint(); notify("designer-tab"); },
       page: (b) => { surf().page += Number(b.dataset.dir); paintParts(); },
       pick: (b) => {
         const cat = surf().slot;
@@ -129,7 +137,7 @@ export const designer = (() => {
         paint(); notify("design");
         clearTimeout(timer); timer = setTimeout(() => evaluateSurface().then(paintResources), 150);
       },
-      jump: (b) => { focusSurfaceSlot(b.dataset.slot); paint(); },
+      jump: (b) => { focusSurfaceSlot(b.dataset.slot); paint(); notify("designer-tab"); },
     });
   }
   function paint() { if (!root) return; paintTabs(); paintParts(); paintInfo(); paintResources(); }
@@ -168,9 +176,23 @@ export const designer = (() => {
       box.innerHTML = `<div class="eyebrow">${SLOTS[cat].label}</div><h3>Required system</h3><p class="note">${SLOTS[cat].about}</p><div class="divider"></div><p class="tiny">Select a card to inspect it.</p>`;
       return;
     }
+    const items = Object.entries(surf().catalog.categories[cat]).map(([k, x]) => ({ id: k, ...x }));
     box.innerHTML = `<div class="eyebrow">${SLOTS[cat].label}</div><h3>${esc(r.name)}</h3>
-      <div class="specs">${specs(cat, r).map(([k, v]) => `<div class="spec kind-assumption"><span>${k}</span><b>${esc(v)}</b></div>`).join("")}</div>
-      <p class="note">${SLOTS[cat].about}</p>`;
+      <div class="maker"><span class="ico">${ICONS[SLOTS[cat].icon]}</span><span class="tiny">Game value *</span></div>
+      ${fitChips(surfaceFits(cat, r))}
+      ${specTiles(specs(cat, r).map(([k, v]) => [k, v, "assumption"]))}
+      ${compareBars(items, r, SURFACE_METRICS[cat] || SURFACE_METRICS.instruments)}
+      <p class="note clamp3">${SLOTS[cat].about}</p>`;
+  }
+  function surfaceFits(cat, r) {
+    const mass = surf().evaluation?.resources?.mass_kg;
+    switch (cat) {
+      case "launch": return [mass != null && [mass <= r.payloadKg ? "ok" : "fail", mass <= r.payloadKg ? "Lifts your spacecraft" : "Spacecraft too heavy"]];
+      case "power": return [[(r.surfaceDuty ?? 1) < 1 ? "warn" : "ok", (r.surfaceDuty ?? 1) < 1 ? "Sleeps at night" : "Works day and night"]];
+      case "landing": return [[r.reliability >= 0.9 ? "ok" : r.reliability >= 0.75 ? "warn" : "fail", `${Math.round(r.reliability * 100)}% safe landing`]];
+      case "comm": return [[r.efficiency >= 0.8 ? "ok" : "warn", `${Math.round(r.efficiency * 100)}% of data home`]];
+      default: return [];
+    }
   }
   function meter(label, c, money = false) {
     if (!c) return `<div class="meter"><div class="row"><span>${label}</span><b>—</b></div><div class="bar"><i style="width:0"></i></div></div>`;

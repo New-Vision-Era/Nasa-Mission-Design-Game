@@ -4,8 +4,8 @@ import { api } from "../api.js";
 import {
   state, notify, rec, apiReady, slotFilled, selectedIds, toggleComponent, powerQty, changeQty,
 } from "../state.js";
-import { el, actions, esc, STATUS_GLYPH, LEVEL_CLASS } from "../ui.js";
-import { SLOTS, NONE_CARD, cardMetrics, inspectorSpecs, iconFor, usd, unit, STEP_TO_SLOT, gbPerDay } from "../catalog.js";
+import { el, actions, esc, STATUS_GLYPH, LEVEL_CLASS, compareBars, fitChips, specTiles } from "../ui.js";
+import { SLOTS, NONE_CARD, cardMetrics, inspectorSpecs, iconFor, usd, unit, STEP_TO_SLOT, gbPerDay, compareMetrics, launcherCapacityKg } from "../catalog.js";
 
 const TABS = [["spacecraft", "Spacecraft"], ["orbit", "Orbit"], ["launcher", "Launcher"]];
 const SPACECRAFT_SLOTS = ["platform", "science", "power", "comms", "adcs", "propulsion"];
@@ -86,7 +86,7 @@ export function render({ go }) {
       d.slot = d.tab === "spacecraft" ? (SPACECRAFT_SLOTS.includes(d.slot) ? d.slot : "platform") : d.tab === "orbit" ? "orbit" : "launcher";
       d.page = 0; d.inspect = null; paintAll(); notify("designer-tab");
     },
-    slot: (b) => { d.slot = b.dataset.slot; d.page = 0; d.inspect = null; paintAll(); notify("designer-tab"); },
+    slot: (b) => { d.slot = b.dataset.slot; d.tab = SLOTS[d.slot].tab || d.tab; d.page = 0; d.inspect = null; paintAll(); notify("designer-tab"); },
     page: (b) => { d.page += Number(b.dataset.dir); paintParts(); },
     pick: (b) => {
       const slot = d.slot;
@@ -140,14 +140,13 @@ function paintTabs() {
   root.querySelector("#d-tabs").innerHTML = TABS.map(([k, l]) =>
     `<button class="${d.tab === k ? "active" : ""} ${tabDone[k] ? "complete" : ""}" data-action="tab" data-tab="${k}">${l}<span class="tdot"></span></button>`).join("");
   const sub = root.querySelector("#d-sub");
-  if (d.tab === "spacecraft") {
-    sub.style.display = "";
-    sub.innerHTML = SPACECRAFT_SLOTS.map((s) => {
-      const count = s === "science" ? state.config.instrument_ids.length : s === "comms" ? state.config.communication_system_ids.length : 0;
-      const need = SLOTS[s].required ? `<span class="need ${slotFilled(s) ? "ok" : ""}"></span>` : "";
-      return `<button class="chip ${d.slot === s ? "active" : ""}" data-action="slot" data-slot="${s}">${need}${SLOTS[s].label}${count ? `<span class="count">${count}</span>` : ""}</button>`;
-    }).join("");
-  } else { sub.style.display = "none"; sub.innerHTML = ""; }
+  const chip = (s) => {
+    const count = s === "science" ? state.config.instrument_ids.length : s === "comms" ? state.config.communication_system_ids.length : 0;
+    const need = SLOTS[s].required ? `<span class="need ${slotFilled(s) ? "ok" : ""}"></span>` : "";
+    return `<button class="chip ${d.slot === s ? "active" : ""}" data-action="slot" data-slot="${s}">${need}${SLOTS[s].label}${count ? `<span class="count">${count}</span>` : ""}</button>`;
+  };
+  // every system in one row: spacecraft parts, then where it flies and what takes it there
+  sub.innerHTML = `${SPACECRAFT_SLOTS.map(chip).join("")}<i class="sep"></i>${["orbit", "launcher"].map(chip).join("")}`;
   const ls = state.evaluation?.launch_assessment?.status;
   const pill = root.querySelector("#d-feas");
   pill.className = `pill ${ls === "GO" ? "ok" : ls === "NO_GO" ? "bad" : ls === "RISKY" ? "warn" : ""}`;
@@ -253,12 +252,72 @@ function paintInfo() {
   const specs = inspectorSpecs(slot, r);
   const note = r.value_notes || r.ownership_note || "";
   const src = (r.source_urls || [])[0];
+  const items = state.catalog.categories[SLOTS[slot].category] || [];
   box.innerHTML = `<div class="eyebrow">${SLOTS[slot].label}</div>
     <h3>${esc(r.name)}</h3>
-    <span class="tiny">${esc(r.manufacturer || r.provider || "")}</span>
-    <div class="specs">${specs.map(([k, v, kind]) => `<div class="spec ${kind ? `kind-${kind}` : ""}"><span>${k}</span><b>${esc(v)}</b></div>`).join("")}</div>
+    <div class="maker"><span class="ico">${iconFor(slot, r)}</span><span class="tiny ellipsis">${esc(r.manufacturer || r.provider || "")}</span></div>
+    ${fitChips(fits(slot, r))}
+    ${specTiles(specs)}
+    ${compareBars(items, r, compareMetrics(slot, r))}
     ${note ? `<p class="note clamp3" title="${esc(note)}">${esc(note)}</p>` : ""}
     ${src ? `<a class="src eyebrow" href="${esc(src)}" target="_blank" rel="noopener">Source ↗</a>` : ""}`;
+}
+
+/* Does this option work with the rest of the design? Short verdicts, worked out from the
+   catalog values and the last engine evaluation. */
+function fits(slot, r) {
+  const c = state.config;
+  const ev = state.evaluation;
+  const by = ev ? Object.fromEntries(ev.constraints.map((x) => [x.id, x])) : {};
+  const sci = state.scenario.parameters.science || {};
+  const selected = selectedIds(slot).includes(r.id);
+  const instruments = c.instrument_ids.map((id) => rec("instruments", id)).filter(Boolean);
+  switch (slot) {
+    case "platform": {
+      const mass = by.payload_mass?.actual_value;
+      const power = by.power_budget?.actual_value;
+      return [
+        mass != null && [mass <= r.payload_mass_capacity_kg ? "ok" : "fail", mass <= r.payload_mass_capacity_kg ? "Holds your payload" : "Payload too heavy"],
+        power != null && [power <= r.payload_average_power_w ? "ok" : "fail", power <= r.payload_average_power_w ? "Powers your payload" : "Not enough power"],
+      ];
+    }
+    case "science": {
+      const match = (sci.required_instrument_families_any || []).includes(r.family);
+      const sharp = sci.max_gsd_m == null || r.gsd_m == null ? null : r.gsd_m <= sci.max_gsd_m;
+      const wide = sci.min_swath_km == null || r.swath_km == null ? null : r.swath_km >= sci.min_swath_km;
+      const pf = rec("platforms", c.platform_id);
+      const used = instruments.reduce((a, x) => a + (x.mass_kg || 0), 0) + (selected ? 0 : r.mass_kg || 0);
+      return [
+        [match ? "ok" : "warn", match ? "Mission match" : "Wrong kind"],
+        sharp != null && [sharp ? "ok" : "fail", `≤ ${sci.max_gsd_m} m`],
+        wide != null && [wide ? "ok" : "fail", `≥ ${sci.min_swath_km} km swath`],
+        pf && [used <= pf.payload_mass_capacity_kg ? "ok" : "fail", used <= pf.payload_mass_capacity_kg ? "Fits platform" : "Too heavy"],
+      ];
+    }
+    case "comms": return [
+      [r.can_receive_commands ? "ok" : "", r.can_receive_commands ? "Uplink" : "Downlink only"],
+      [(state.scenario.parameters.ground_station_types || []).includes(r.ground_station_type) ? "ok" : "fail", `${(r.band || "").toUpperCase()} stations`],
+    ];
+    case "adcs": return [[r.has_star_tracker ? "ok" : "", r.has_star_tracker ? "Star tracker" : "No star tracker"]];
+    case "orbit": {
+      const lv = rec("launch_vehicles", c.launch_vehicle_id);
+      return [
+        [r.sun_synchronous ? "ok" : "warn", r.sun_synchronous ? "Same light every pass" : "Lighting changes"],
+        lv && [(lv.orbit_ids_supported || []).includes(r.id) ? "ok" : "fail", (lv.orbit_ids_supported || []).includes(r.id) ? "Your launcher gets there" : "Your launcher can't"],
+      ];
+    }
+    case "launcher": {
+      const reaches = c.orbit_id ? (r.orbit_ids_supported || []).includes(c.orbit_id) : null;
+      const mass = ev?.resources?.total_spacecraft_mass_kg?.value;
+      const cap = launcherCapacityKg(r);
+      return [
+        reaches != null && [reaches ? "ok" : "fail", reaches ? "Reaches your orbit" : "Can't reach your orbit"],
+        mass != null && cap != null && [mass <= cap ? "ok" : "fail", mass <= cap ? "Lifts your spacecraft" : "Spacecraft too heavy"],
+        cap == null && ["", "Shared ride"],
+      ];
+    }
+    default: return [];
+  }
 }
 
 /* ---------------- resources dashboard ---------------- */

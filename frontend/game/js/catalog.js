@@ -128,12 +128,12 @@ export function inspectorSpecs(slot, r) {
       ["Inclination", unit(r.inclination_deg, "°")],
       ["Sun-synchronous", r.sun_synchronous ? "yes" : "no"],
       ["Period", unit(r.period_min, "min")],
-      ["Resolution vs 500 km", `×${n(r.resolution_scale_vs_500km, 2)}`],
+      ["Orbits / day", n(r.orbits_per_day, 1) ?? "n/p"],
     ];
     case "launcher": return [
-      ["Provider", r.provider || "n/p"],
-      ["Price", usd(r.price_usd), r.price_type === "publicly_stated_estimate" ? "estimate" : ""],
+      ["Price", r.price_usd != null ? usd(r.price_usd) : launcherPrice(r) != null ? `~${usd(launcherPrice(r))}` : "n/p", r.price_usd == null || r.price_type === "publicly_stated_estimate" ? "estimate" : ""],
       ["Capacity", maxCapacity(r)],
+      ["Height", LAUNCHER_SIZE[r.id] ? `${LAUNCHER_SIZE[r.id].h} m` : "n/p"],
       ["Reaches", (r.orbit_ids_supported || []).length + " orbits"],
     ];
     default: return [];
@@ -141,6 +141,35 @@ export function inspectorSpecs(slot, r) {
 }
 
 export const NONE_CARD = { id: null, name: "No propulsion", none: true };
+
+/* Published vehicle sizes (m), used for the 3D rockets and the inspector. */
+export const LAUNCHER_SIZE = {
+  rocket_lab_electron: { h: 18, d: 1.2 }, firefly_alpha: { h: 29.5, d: 2 }, isro_sslv: { h: 34, d: 2 },
+  vega_c: { h: 35, d: 3.4 }, isro_pslv_xl: { h: 44, d: 2.8 }, spacex_falcon9_dedicated: { h: 70, d: 3.7 },
+  spacex_transporter_rideshare: { h: 70, d: 3.7 },
+};
+export const launcherCapacityKg = (r) => { const p = r.capacity_points || []; return p.length ? Math.max(...p.map((x) => x.mass_kg)) : null; };
+export const launcherPrice = (r) => r.price_usd ?? (r.price_estimate ? (r.price_estimate.min_usd + r.price_estimate.max_usd) / 2 : null);
+const kgf = (v) => `${n(v, v < 10 ? 2 : 0)} kg`;
+const wf = (v) => `${n(v, v < 10 ? 1 : 0)} W`;
+
+/* Inspector comparison bars: [label, get, better, fmt] */
+export function compareMetrics(slot, r) {
+  switch (slot) {
+    case "platform": return [["Payload room", (x) => x.payload_mass_capacity_kg, "high", kgf], ["Payload power", (x) => x.payload_average_power_w, "high", wf], ["Price", (x) => x.price_usd, "low", usd]];
+    case "science": return [["Sharpness", (x) => x.gsd_m, "low", (v) => `${n(v, 1)} m`], ["Swath", (x) => x.swath_km, "high", (v) => `${n(v, 0)} km`], ["Mass", (x) => x.mass_kg, "low", kgf], ["Power draw", (x) => x.power_operating_w, "low", wf]];
+    case "power":
+      if (r.family === "solar_array") return [["Power", (x) => (x.family === r.family ? x.peak_power_w : null), "high", wf], ["Mass", (x) => (x.family === r.family ? x.mass_kg : null), "low", kgf]];
+      if (r.family === "battery") return [["Energy", (x) => (x.family === r.family ? x.energy_wh : null), "high", (v) => `${n(v, 0)} Wh`], ["Mass", (x) => (x.family === r.family ? x.mass_kg : null), "low", kgf]];
+      return [["Mass", (x) => (x.family === r.family ? x.mass_kg : null), "low", kgf]];
+    case "comms": return [["Data rate", (x) => x.downlink_kbps, "high", rate], ["Transmit power", (x) => x.power_tx_w, "low", wf], ["Mass", (x) => x.mass_kg, "low", kgf]];
+    case "adcs": return [["Pointing", (x) => x.pointing_accuracy_deg, "low", (v) => `${n(v, 3)}°`], ["Mass", (x) => x.mass_kg, "low", kgf]];
+    case "propulsion": return [["Total impulse", (x) => x.total_impulse_ns, "high", (v) => `${n(v, 0)} Ns`], ["Thrust", (x) => x.thrust_n, "high", (v) => `${n(v, 3)} N`], ["Mass", (x) => x.wet_mass_kg, "low", kgf]];
+    case "orbit": return [["Image sharpness", (x) => x.resolution_scale_vs_500km, "low", (v) => `×${n(v, 2)}`], ["Pass length", (x) => x.max_pass_duration_min_10deg, "high", (v) => `${n(v, 1)} min`], ["Time in shadow", (x) => x.max_eclipse_min, "low", (v) => `${n(v, 0)} min`]];
+    case "launcher": return [["Lift capacity", launcherCapacityKg, "high", kgf], ["Price", launcherPrice, "low", usd], ["Orbits reached", (x) => (x.orbit_ids_supported || []).length, "high", (v) => `${v}`]];
+    default: return [];
+  }
+}
 
 /* Category glyph used in summaries */
 export function slotOfCategory(category) {

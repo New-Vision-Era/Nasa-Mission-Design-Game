@@ -66,3 +66,37 @@ export function pct(v) { return v == null ? "—" : `${Math.round(v * 100)}%`; }
 export function fitPage(n) { return Math.max(1, n); }
 
 export function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+/* ---------- inspector visuals: how an option ranks against the others, and whether it fits ----------
+   metrics: [label, get(r) -> number|null, "high"|"low" (which is better), fmt(v) -> string] */
+export function compareBars(items, r, metrics) {
+  const rows = metrics.map(([label, get, better, fmt]) => {
+    const v = get(r);
+    const vals = items.map(get).filter((x) => x != null && Number.isFinite(+x) && +x > 0);
+    if (v == null || !Number.isFinite(+v) || vals.length < 2) {
+      return `<div class="cmp"><div class="row"><span>${label}</span><b>${v == null ? "—" : esc(fmt(v))}</b></div><div class="cbar"><i style="width:0"></i></div></div>`;
+    }
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const logScale = hi / lo > 15;                       // wide ranges (prices, data rates)
+    const f = (x) => (logScale ? Math.log(x) : x);
+    let g = hi === lo ? 1 : (f(Math.max(+v, lo)) - f(lo)) / (f(hi) - f(lo));
+    if (better === "low") g = 1 - g;
+    const best = hi !== lo && g > 0.999;
+    const cls = g >= 0.66 ? "good" : g >= 0.33 ? "mid" : "low";
+    return `<div class="cmp" title="${esc(`${label}: ${fmt(v)} (range ${fmt(lo)} – ${fmt(hi)})`)}"><div class="row"><span>${label}${best ? '<em>best</em>' : ""}</span><b>${esc(fmt(v))}</b></div><div class="cbar ${cls}"><i style="width:${Math.round(8 + g * 92)}%"></i></div></div>`;
+  }).join("");
+  return `<div class="compare"><span class="label">vs ${items.length - 1} other options</span>${rows}</div>`;
+}
+
+/* chips: [state ("ok" | "fail" | "warn" | ""), text] */
+export function fitChips(chips) {
+  const list = chips.filter(Boolean);
+  if (!list.length) return "";
+  const glyph = { ok: "✓", fail: "✗", warn: "!" };
+  return `<div class="fits">${list.map(([s, t]) => `<span class="fit ${s}">${glyph[s] || "•"} ${esc(t)}</span>`).join("")}</div>`;
+}
+
+/* spec tiles: two per row, long values take the full row */
+export function specTiles(specs) {
+  return `<div class="tiles">${specs.map(([k, v, kind]) => `<div class="tile ${String(v).length > 9 ? "wide" : ""} ${kind ? `kind-${kind}` : ""}"><span>${esc(k)}</span><b title="${esc(v)}">${esc(v)}</b></div>`).join("")}</div>`;
+}

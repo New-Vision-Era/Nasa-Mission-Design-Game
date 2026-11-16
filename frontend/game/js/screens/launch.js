@@ -7,6 +7,7 @@ import { state, notify, nameOf as earthName, rec as earthRec, isSurface } from "
 import { el, actions, esc, sleep, toast } from "../ui.js";
 import { nameOf as surfName } from "./surface.js";
 import * as sound from "../sound.js";
+import { launchCue } from "../viewer3d.js";
 
 const STAGES = ["Final checks", "Countdown", "Liftoff", "Deployment", "Orbit insertion"];
 let root = null;
@@ -51,9 +52,10 @@ export function render({ go }) {
       <span class="pill cyan" id="l-pill">AWAITING COMMAND</span>
     </div>
     <div class="launch">
-      <div class="card pad">
+      <div class="card pad launch-stage">
         <div class="stars" style="opacity:.35"></div>
         <div class="glow" id="l-glow"></div><div class="trail" id="l-trail"></div>
+        <div class="viewport3d" id="viewport-launch" aria-label="Launch pad, 3D"></div>
         <div class="countdown"><div class="t" id="l-t">T−10</div><div class="s" id="l-s">SYSTEMS READY · STANDING BY</div></div>
       </div>
       <div class="card stack" style="gap:14px">
@@ -112,6 +114,7 @@ async function ignite(go) {
   for (let n = 10; n >= 1 && alive; n--) {
     t.textContent = `T−${n}`;
     s.textContent = n > 3 ? "AUTOMATED SEQUENCE" : "MAIN ENGINE START";
+    if (n === 3) launchCue("ignition");
     await sleep(sound.COUNTDOWN_STEP_MS);
   }
   if (!alive) return;
@@ -119,6 +122,7 @@ async function ignite(go) {
   if (!alive) return;
   if (err) {
     sound.stop("countdown", 300);
+    launchCue("abort");
     t.textContent = "HOLD";
     s.textContent = "LAUNCH SCRUBBED";
     pill.textContent = "SCRUB";
@@ -144,6 +148,7 @@ async function ignite(go) {
   t.textContent = "T−0";
   stage(2);
   sound.play("launch", { volume: 0.85 });
+  launchCue("liftoff");
   await sleep(500);
   if (!alive) return;
   t.textContent = "LIFTOFF"; t.classList.add("go");
@@ -151,13 +156,27 @@ async function ignite(go) {
   trail.classList.add("fly");
   root.querySelector("#l-glow").classList.add("on");
 
+  // ascent: staging, fairing, spacecraft separation (the 3D pad follows the same cues)
+  const ascent = async (upTo) => {
+    await sleep(2300); if (!alive) return false;
+    s.textContent = "STAGE SEPARATION"; launchCue("staging");
+    if (upTo === "staging") return true;
+    await sleep(1300); if (!alive) return false;
+    stage(3); s.textContent = "FAIRING SEPARATION"; launchCue("fairing");
+    if (upTo === "fairing") return true;
+    await sleep(1300); if (!alive) return false;
+    stage(4); s.textContent = isSurface() ? "TRANSFER BURN · SPACECRAFT SEPARATION" : "ORBIT INSERTION · SPACECRAFT SEPARATION"; launchCue("deploy");
+    return true;
+  };
+
   const loss = r.loss;
   if (loss && ["launch", "orbit_insertion", "commissioning"].includes(loss.stage)) {
     const at = { launch: 2, orbit_insertion: 4, commissioning: 4 }[loss.stage];
-    if (at > 2) { await sleep(1400); if (!alive) return; stage(3); s.textContent = "SPACECRAFT SEPARATION"; await sleep(900); if (!alive) return; stage(4); }
-    if (loss.stage === "commissioning") { stage(4, true); s.textContent = "ACQUIRING SIGNAL…"; await sleep(1600); if (!alive) return; }
-    else await sleep(900);
+    if (loss.stage === "launch") { await sleep(1300); if (!alive) return; }
+    else if (loss.stage === "orbit_insertion") { if (!(await ascent("fairing"))) return; await sleep(900); if (!alive) return; stage(4); s.textContent = "ORBIT INSERTION"; }
+    else { if (!(await ascent())) return; await sleep(900); if (!alive) return; stage(4, true); s.textContent = "ACQUIRING SIGNAL…"; await sleep(1600); if (!alive) return; }
     if (!alive) return;
+    launchCue({ launch: "explode", orbit_insertion: "veer", commissioning: "nosignal" }[loss.stage]);
     sound.stop("launch", 300);
     sound.play(loss.stage === "commissioning" ? "alarm" : "explosion", { volume: 0.9 });
     trail.classList.add("lost");
@@ -178,11 +197,8 @@ async function ignite(go) {
     return;
   }
 
-  await sleep(1500); if (!alive) return;
-  stage(3); s.textContent = "SPACECRAFT SEPARATION";
-  await sleep(1000); if (!alive) return;
-  stage(4); s.textContent = isSurface() ? "TRANSFER BURN" : "ORBIT INSERTION";
-  await sleep(900); if (!alive) return;
+  if (!(await ascent())) return;
+  await sleep(1700); if (!alive) return;
   stage(4, true);
   if (v.verdict === "RISKY") {
     root.querySelectorAll(".stage")[4].classList.add("warn");
