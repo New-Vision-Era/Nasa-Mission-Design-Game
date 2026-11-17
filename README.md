@@ -1,4 +1,4 @@
-# 🚀 [▶ PLAY THE GAME — click here to try it](https://soukisami.github.io/Nasa-Mission-Design-Game/frontend/game/)
+# 🚀 [▶ PLAY THE GAME — click here to try it](https://new-vision-era.github.io/Nasa-Mission-Design-Game/frontend/game/)
 
 # Space Mission Design Game — backend
 
