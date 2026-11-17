@@ -1,0 +1,161 @@
+"""HTTP tests for the additive real-data simulation API. Skipped if fastapi/httpx are missing."""
+
+import pytest
+
+pytest.importorskip("fastapi")
+pytest.importorskip("httpx")
+
+from fastapi.testclient import TestClient  # noqa: E402
+
+from backend.app.config import Settings  # noqa: E402
+from backend.app.main import create_app  # noqa: E402
+
+API = "/api/v1/simulation"
+
+CONFIG = {
+    "scenario_id": "earth_observation_v4",
+    "platform_id": "gsat_50",
+    "instrument_ids": ["hyperscape100"],
+    "power": {"mode": "platform_payload_budget"},
+    "communication_system_ids": ["endurosat_s_band_transceiver", "endurosat_x_band_transmitter"],
+    "adcs_system_id": "cubespace_cubeadcs_3axis_small_star",
+    "propulsion_system_id": None,
+    "orbit_id": "sso_500",
+    "launch_vehicle_id": "rocket_lab_electron",
+}
+
+
+@pytest.fixture()
+def client():
+    with TestClient(create_app(Settings(database_path=":memory:"))) as c:
+        yield c
+
+
+def test_v4_catalog_and_scenarios(client):
+    cat = client.get(f"{API}/catalog")
+    assert cat.status_code == 200
+    body = cat.json()
+    assert body["dataset_id"] == "equipment_v5"
+    assert {k: len(v) for k, v in body["categories"].items()} == {
+        "platforms": 3, "instruments": 21, "power_systems": 17, "communication_systems": 8,
+        "propulsion_systems": 9, "adcs_systems": 7, "orbits": 5, "launch_vehicles": 7}
+    assert body["categories"]["platforms"][0]["design_lifetime_years"] is None  # null stays null over HTTP
+    assert body["categories"]["platforms"][0]["bus_mass_basis"] == "estimate"
+    scenarios = client.get(f"{API}/scenarios").json()["scenarios"]
+    assert scenarios[0]["id"] == "earth_observation_v4"
+
+
+def test_v4_run_real_data_is_feasible(client):
+    r = client.post(f"{API}/run", json={"configuration": CONFIG, "seed": 42})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["dataset_id"] == "equipment_v5"
+    assert body["feasibility"]["status"] == "FEASIBLE"
+    assert body["feasibility"]["hard_not_evaluated"] == []
+    assert body["resources"]["bus_mass_kg"]["basis"] == "estimate"
+    assert body["mission"]["outcome"] == "SUCCESS"
+    assert 0 <= body["score"]["total"] <= 100
+    for key in ("constraints", "resources", "performance", "explanations", "assumptions", "provenance"):
+        assert key in body
+
+
+def test_v4_run_unknown_launch_capacity_is_conditional(client):
+    r = client.post(f"{API}/run", json={"configuration": {**CONFIG, "orbit_id": "sso_600"}})
+    assert r.status_code == 200
+    assert r.json()["feasibility"]["hard_not_evaluated"] == ["launch_mass"]
+
+
+def test_v4_run_sandbox_still_accepts_overrides(client):
+    r = client.post(f"{API}/run", json={"configuration": CONFIG,
+                                        "scenario_parameters": {"bus_mass_kg_assumption": 40}})
+    assert r.status_code == 200
+    launch = [c for c in r.json()["constraints"] if c["id"] == "launch_mass"][0]
+    assert launch["value_kind"] == "gameplay_assumption"
+
+
+def test_v4_infeasible_design_is_a_normal_200(client):
+    r = client.post(f"{API}/run", json={"configuration": {**CONFIG, "instrument_ids": ["dragoneye"]}})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["feasibility"]["status"] == "INFEASIBLE" and body["mission"]["launched"] is False
+
+
+def test_v4_same_seed_same_result(client):
+    payload = {"configuration": CONFIG, "seed": 7}
+    assert client.post(f"{API}/run", json=payload).json() == client.post(f"{API}/run", json=payload).json()
+
+
+@pytest.mark.parametrize("payload,status,code", [
+    ({"configuration": {**CONFIG, "platform_id": "gsat_999"}}, 422, "unknown_component"),
+    ({"configuration": {**CONFIG, "scenario_id": "nope"}}, 404, "not_found"),
+    ({"configuration": {"scenario_id": "earth_observation_v4"}}, 422, "invalid_request"),
+    ({"configuration": CONFIG, "scenario_parameters": {"passes_per_day": -1}}, 422, "invalid_request"),
+    ({"seed": 1}, 422, "invalid_request"),
+])
+def test_v4_errors_use_the_backend_error_shape(client, payload, status, code):
+    r = client.post(f"{API}/run", json=payload)
+    assert r.status_code == status, r.text
+    error = r.json()["error"]
+    assert error["code"] == code and error["message"]
+
+
+def test_v4_recommend(client):
+    r = client.post(f"{API}/recommend", json={"configuration": CONFIG})
+    assert r.status_code == 200
+    alternatives = r.json()["alternatives"]
+    assert 1 <= len(alternatives) <= 5
+    assert all(a["feasibility"] != "INFEASIBLE" for a in alternatives)
+
+
+def test_v4_testbench_page_is_served(client):
+    r = client.get(f"{API}/testbench")
+    assert r.status_code == 200 and "Engine v4 test bench" in r.text
+
+
+def test_existing_routes_still_work(client):
+    assert client.get("/api/v1/health").json()["status"] == "ok"
+    assert client.get("/api/v1/mars/catalog").status_code == 200
+
+
+# --- stored runs and history --------------------------------------------------
+
+
+def _login(client, name):
+    r = client.post("/api/v1/auth/register", json={"username": name, "password": "correct horse"})
+    assert r.status_code == 201, r.text
+    return {"Authorization": f"Bearer {r.json()['token']}"}
+
+
+def test_v4_launch_history_and_read_back(client):
+    ada, bob = _login(client, "ada"), _login(client, "bob")
+    r = client.post(f"{API}/runs", headers=ada, json={"configuration": CONFIG, "seed": 3, "name": "Demo"})
+    assert r.status_code == 201, r.text
+    run = r.json()
+    assert run["result"]["feasibility"]["status"] == "FEASIBLE" and run["name"] == "Demo"
+
+    history = client.get(f"{API}/runs", headers=ada).json()
+    assert [h["run_id"] for h in history] == [run["run_id"]]
+    assert history[0]["outcome"] == "SUCCESS" and history[0]["seed"] == 3
+
+    assert client.get(f"{API}/runs/{run['run_id']}", headers=ada).json() == run
+    assert client.get(f"{API}/runs/{run['run_id']}", headers=bob).status_code == 404
+    assert client.get(f"{API}/runs/{run['run_id']}").status_code == 404
+    assert client.get(f"{API}/runs", headers=bob).json() == []
+    assert client.get(f"{API}/runs").status_code == 401
+
+
+def test_v4_guest_launch_and_infeasible_launch(client):
+    guest = client.post(f"{API}/runs", json={"configuration": CONFIG})
+    assert guest.status_code == 201
+    assert client.get(f"{API}/runs/{guest.json()['run_id']}").status_code == 200
+
+    bad = client.post(f"{API}/runs", json={"configuration": {**CONFIG, "instrument_ids": ["dragoneye"]}})
+    assert bad.status_code == 409
+    error = bad.json()["error"]
+    assert error["code"] == "not_launchable" and error["result"]["feasibility"]["status"] == "INFEASIBLE"
+
+    assert client.post(f"{API}/runs", json={"configuration": CONFIG, "seed": -1}).status_code == 422
+    assert client.post(f"{API}/runs", json={}).status_code == 422
+    overrides = client.post(f"{API}/runs", json={"configuration": CONFIG,
+                                                 "scenario_parameters": {"budget_usd": 10**9}})
+    assert overrides.status_code == 422  # stored runs always use the scenario's own values

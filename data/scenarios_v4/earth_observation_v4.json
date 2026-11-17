@@ -1,0 +1,53 @@
+{
+  "id": "earth_observation_v4",
+  "name": "Vegetation health monitoring from low Earth orbit",
+  "briefing": "Your team must fly a small Earth-observation spacecraft that images farmland in several spectral bands so analysts can track vegetation health for one year. You need multispectral or hyperspectral imagery at 10 m resolution or better over a swath of at least 15 km, from a sun-synchronous orbit so lighting stays consistent between visits.",
+  "value_kind": "gameplay_assumption",
+  "notes": "Every value under 'parameters' is a scenario requirement or a GAMEPLAY ASSUMPTION chosen for the game. None is a published real-world specification. bus_mass_kg_assumption is null on purpose: the engine then uses each platform's bus_mass_kg from the dataset (an estimate or derived value since equipment_v5). Set it only to override that value for testing. data_generation_kbps is empty on purpose: instrument data rates are not published and none is invented.",
+  "parameters": {
+    "mission_duration_days": 365,
+    "budget_usd": 12000000,
+    "ground_station_types": ["uhf", "s_band", "x_band"],
+    "passes_per_day": 4,
+    "average_usable_pass_duration_s": null,
+    "usable_pass_fraction": 0.6,
+    "link_availability": 0.9,
+    "optical_cloud_availability": 0.5,
+    "commandable_required": true,
+    "instrument_duty_cycle": 0.2,
+    "instrument_duty_cycle_overrides": {},
+    "propulsion_firing_duty_cycle": 0.0,
+    "data_generation_kbps": {},
+    "science_periods": 12,
+    "count_subsystems_in_payload_mass": true,
+    "volume_scope": "instruments",
+    "packing_factor": 0.6,
+    "bus_mass_kg_assumption": null,
+    "rideshare_mass_cap_kg_assumption": null,
+    "solar_k_factor": 0.65,
+    "battery_depth_of_discharge": 0.3,
+    "hard_pointing_requirement_deg": null,
+    "pointing_swath_warning_fraction": 0.25,
+    "min_delta_v_m_s": null,
+    "science": {
+      "required_instrument_families_any": ["optical_multispectral", "optical_hyperspectral"],
+      "required_spectral_keywords_any": ["multispectral", "hyperspectral"],
+      "max_gsd_m": 10,
+      "min_swath_km": 15,
+      "prefer_sun_synchronous": true
+    },
+    "success_threshold": 0.8,
+    "partial_threshold": 0.4,
+    "margin_target_fraction": 0.2,
+    "deployable_array_penalty": 0.05,
+    "scoring_weights": {"science": 35, "objectives": 25, "reliability": 20, "efficiency": 20},
+    "events": {
+      "enabled": true,
+      "comm_outage_probability": 0.1,
+      "reduced_solar_probability": 0.1,
+      "reduced_solar_factor": 0.7,
+      "optical_cloud_probability": 0.3,
+      "instrument_unavailable_probability": 0.05
+    }
+  }
+}
