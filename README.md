@@ -1,4 +1,4 @@
-# 🚀 [▶ PLAY THE GAME — click here to try it](https://soukisami.github.io/Nasa-Mission-Design-Game/frontend/game/)
+# 🚀 [▶ PLAY THE GAME — click here to try it](https://new-vision-era.github.io/Nasa-Mission-Design-Game/frontend/game/)
 
 # Space Mission Design Game — backend
 
@@ -19,7 +19,7 @@ uvicorn backend.app.main:create_app --factory --reload --port 8000
 
 **Play the game:** http://localhost:8000/ (the UI in `frontend/game/`, served by the backend).
 
-**Hosted version (GitHub Pages):** https://soukisami.github.io/Nasa-Mission-Design-Game/ — Pages
+**Hosted version (GitHub Pages):** https://new-vision-era.github.io/Nasa-Mission-Design-Game/ — Pages
 deploys branch `final-version` as is; the root `index.html` opens `frontend/game/`. Pages cannot run
 Python servers, so the site runs the same backend code in the browser (Pyodide in a Web Worker,
 `frontend/game/js/engine-worker.js` + `backend/app/browser_api.py`); accounts and saved missions are
